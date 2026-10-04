@@ -92,7 +92,7 @@
 
             <!-- Progress Bar & Status -->
             <div class="d-flex justify-content-between align-items-center small my-2">
-                <span class="font-mono fw-bold">{{ b.percentage_used }}% Used</span>
+                <span class="font-mono fw-bold text-main">{{ b.percentage_used }}% Used</span>
                 {% if b.budget_status == 'EXCEEDED' %}
                     <span class="badge-friendly badge-expense-friendly">Over Budget</span>
                 {% elif b.budget_status == 'WARNING' %}
@@ -108,17 +108,17 @@
 
             <div class="row g-1 text-center font-mono p-2 rounded border" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important; font-size: 0.78rem;">
                 <div class="col-4">
-                    <span class="text-muted d-block small">Budget</span>
-                    <span class="fw-bold">{{ b.budget_amount | currency }}</span>
+                    <span class="text-secondary fw-semibold d-block small">Budget</span>
+                    <span class="fw-bold text-main">{{ b.budget_amount | currency }}</span>
                 </div>
                 <div class="col-4 border-start border-end" style="border-color: var(--border-color) !important;">
-                    <span class="text-muted d-block small">Spent</span>
+                    <span class="text-secondary fw-semibold d-block small">Spent</span>
                     <span class="fw-bold {% if b.actual_spent > b.budget_amount %}text-expense{% else %}text-main{% endif %}">
                         {{ b.actual_spent | currency }}
                     </span>
                 </div>
                 <div class="col-4">
-                    <span class="text-muted d-block small">Remaining</span>
+                    <span class="text-secondary fw-semibold d-block small">Remaining</span>
                     <span class="fw-bold {% if b.remaining_budget < 0 %}text-expense{% else %}text-income{% endif %}">
                         {{ b.remaining_budget | currency }}
                     </span>

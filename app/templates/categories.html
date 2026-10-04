@@ -42,7 +42,7 @@
                                     <span class="badge-friendly {% if cat.category_type == 'income' %}badge-income-friendly{% else %}badge-expense-friendly{% endif %} py-0 px-2" style="font-size: 0.72rem;">
                                         {{ cat.category_type | capitalize }}
                                     </span>
-                                    <span class="text-muted small">{{ cat.txn_count }} transaction(s)</span>
+                                    <span class="text-secondary small">{{ cat.txn_count }} transaction(s)</span>
                                 </div>
                             </div>
                         </div>
@@ -86,8 +86,8 @@
                     <div class="col-sm-6">
                         <div class="p-2 rounded border d-flex align-items-center justify-content-between" style="background-color: var(--bg-card); border-color: var(--border-color) !important;">
                             <div class="d-flex align-items-center gap-2">
-                                <i class="bi {{ cat.icon or 'bi-tag' }} text-muted"></i>
-                                <span class="fw-medium small">{{ cat.category_name }}</span>
+                                <i class="bi {{ cat.icon or 'bi-tag' }} text-secondary"></i>
+                                <span class="fw-semibold text-main small">{{ cat.category_name }}</span>
                             </div>
                             <span class="badge-friendly {% if cat.category_type == 'income' %}badge-income-friendly{% else %}badge-expense-friendly{% endif %} py-0 px-2" style="font-size: 0.7rem;">
                                 {{ cat.category_type | capitalize }}
@@ -99,7 +99,7 @@
 
                 <div class="mt-3 p-3 rounded border" style="background-color: var(--primary-subtle); border-color: rgba(37, 99, 235, 0.25) !important;">
                     <div class="fw-bold text-primary small mb-1"><i class="bi bi-info-circle me-1"></i> Database Design Note</div>
-                    <p class="small text-muted mb-0" style="line-height: 1.5;">
+                    <p class="small text-secondary mb-0" style="line-height: 1.5;">
                         Default categories are shared across all users (with <code>user_id IS NULL</code>), while custom categories belong to your specific account, preventing duplicate rows and maintaining 3NF normalization.
                     </p>
                 </div>

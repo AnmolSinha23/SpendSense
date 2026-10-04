@@ -158,7 +158,7 @@
                         <tbody>
                             {% for txn in recent_transactions %}
                             <tr>
-                                <td class="font-mono text-muted small" style="white-space: nowrap;">
+                                <td class="font-mono text-secondary small fw-medium" style="white-space: nowrap;">
                                     {{ txn.txn_date | format_date }}
                                 </td>
                                 <td>
@@ -168,7 +168,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="fw-medium text-truncate d-inline-block" style="max-width: 220px;">
+                                    <span class="fw-medium text-main text-truncate d-inline-block" style="max-width: 220px;">
                                         {{ txn.description or 'No note' }}
                                     </span>
                                 </td>
@@ -238,7 +238,7 @@
                             <div class="font-mono fw-bold fs-6 {% if acc.balance >= 0 %}text-main{% else %}text-expense{% endif %}">
                                 {{ acc.balance | currency }}
                             </div>
-                            <span class="small text-muted font-mono" style="font-size: 0.7rem;">Live balance</span>
+                            <span class="small text-secondary font-mono" style="font-size: 0.72rem;">Live balance</span>
                         </div>
                     </div>
                     {% endfor %}

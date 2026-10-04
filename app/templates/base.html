@@ -9,6 +9,7 @@
     <script>
         const savedTheme = localStorage.getItem('spendsense-theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
     </script>
 
     <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
@@ -242,6 +243,7 @@
         const current = document.documentElement.getAttribute('data-theme') || 'light';
         const next = current === 'light' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', next);
+        document.documentElement.setAttribute('data-bs-theme', next);
         localStorage.setItem('spendsense-theme', next);
         updateThemeIcon(next);
         if (window.renderCharts) {
@@ -250,14 +252,14 @@
     }
 
     function updateThemeIcon(theme) {
-        const icon = document.getElementById('themeIcon');
-        if (icon) {
+        const icons = document.querySelectorAll('#themeIcon, .theme-icon');
+        icons.forEach(icon => {
             if (theme === 'dark') {
-                icon.className = 'bi bi-sun-fill text-warning';
+                icon.className = 'bi bi-sun-fill text-warning theme-icon';
             } else {
-                icon.className = 'bi bi-moon-stars text-secondary';
+                icon.className = 'bi bi-moon-stars-fill text-primary theme-icon';
             }
-        }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', () => {

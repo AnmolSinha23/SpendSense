@@ -25,14 +25,14 @@
     function getThemeStyles() {
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
         return {
-            textColor: isDark ? '#94a3b8' : '#475569',
-            gridColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+            textColor: isDark ? '#e2e8f0' : '#1e293b',       /* Bright Slate 200 in dark mode, Deep Slate 800 in light mode */
+            gridColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             tooltipBg: isDark ? '#1e293b' : '#ffffff',
             tooltipText: isDark ? '#f8fafc' : '#0f172a',
-            tooltipBorder: isDark ? '#334155' : '#e2e8f0',
-            sliceBorder: isDark ? '#1e293b' : '#ffffff',
-            incomeColor: '#10b981',
-            expenseColor: '#ef4444'
+            tooltipBorder: isDark ? '#475569' : '#cbd5e1',
+            sliceBorder: isDark ? '#131b2e' : '#ffffff',
+            incomeColor: isDark ? '#4ade80' : '#15803d',
+            expenseColor: isDark ? '#f87171' : '#b91c1c'
         };
     }
 

@@ -130,15 +130,15 @@
                                 <span class="badge-friendly badge-account-friendly p-1">
                                     <i class="bi {{ cat.category_icon or 'bi-tag' }}"></i>
                                 </span>
-                                <span class="fw-semibold">{{ cat.category_name }}</span>
+                                <span class="fw-semibold text-main">{{ cat.category_name }}</span>
                             </div>
                         </td>
                         <td><span class="badge-friendly badge-expense-friendly">Expense</span></td>
-                        <td class="text-center font-mono text-muted">{{ cat.transaction_count }}</td>
-                        <td class="text-end font-mono text-muted">{{ cat.avg_transaction_amount | currency }}</td>
+                        <td class="text-center font-mono text-secondary fw-semibold">{{ cat.transaction_count }}</td>
+                        <td class="text-end font-mono text-secondary fw-medium">{{ cat.avg_transaction_amount | currency }}</td>
                         <td class="text-end font-mono fw-bold text-expense">{{ cat.total_amount | currency }}</td>
                         <td class="text-end font-mono">
-                            <span class="fw-bold">{{ "%.1f"|format(pct) }}%</span>
+                            <span class="fw-bold text-main">{{ "%.1f"|format(pct) }}%</span>
                             <div class="progress-friendly mt-1">
                                 <div class="progress-friendly-fill" style="width: {{ pct }}%; background-color: var(--expense-red);"></div>
                             </div>

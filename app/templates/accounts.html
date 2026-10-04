@@ -76,7 +76,7 @@
             </div>
 
             <div class="my-3 py-2 border-top border-bottom" style="border-color: var(--border-color) !important;">
-                <div class="text-muted small">Current Balance</div>
+                <div class="text-secondary small fw-semibold">Current Balance</div>
                 <div class="font-mono fw-bold fs-3 {% if acc.current_balance >= 0 %}text-main{% else %}text-expense{% endif %}">
                     {{ acc.current_balance | currency }}
                 </div>
@@ -84,16 +84,16 @@
 
             <div class="row g-2 text-center small font-mono pt-1">
                 <div class="col-4">
-                    <span class="text-muted d-block" style="font-size: 0.72rem;">TOTAL IN</span>
+                    <span class="text-secondary fw-semibold d-block" style="font-size: 0.72rem;">TOTAL IN</span>
                     <span class="text-income fw-bold">+{{ acc.total_inflow | currency }}</span>
                 </div>
                 <div class="col-4 border-start border-end" style="border-color: var(--border-color) !important;">
-                    <span class="text-muted d-block" style="font-size: 0.72rem;">TOTAL OUT</span>
+                    <span class="text-secondary fw-semibold d-block" style="font-size: 0.72rem;">TOTAL OUT</span>
                     <span class="text-expense fw-bold">-{{ acc.total_outflow | currency }}</span>
                 </div>
                 <div class="col-4">
-                    <span class="text-muted d-block" style="font-size: 0.72rem;">ENTRIES</span>
-                    <span class="text-muted fw-bold">{{ acc.total_transactions }}</span>
+                    <span class="text-secondary fw-semibold d-block" style="font-size: 0.72rem;">ENTRIES</span>
+                    <span class="text-main fw-bold">{{ acc.total_transactions }}</span>
                 </div>
             </div>
         </div>
