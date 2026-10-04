@@ -214,12 +214,16 @@ body {
     color: var(--text-muted) !important;
 }
 
-/* Tabular Numbers & Vertical Alignment */
-.font-mono,
-.amount-text,
-.metric-val,
-.date-badge,
+/* Tabular Figures (Plus Jakarta Sans / Inter with perfect vertical number alignment) */
 .tabular-num {
+    font-family: var(--font-sans) !important;
+    font-variant-numeric: tabular-nums !important;
+    font-feature-settings: "tnum" 1 !important;
+}
+
+.font-mono,
+.amount-text-mono,
+.date-badge {
     font-family: var(--font-mono) !important;
     font-variant-numeric: tabular-nums !important;
     font-feature-settings: "tnum" 1 !important;
@@ -568,8 +572,208 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   8. Quick Filter Group (All / Income / Expense)
+   8. Unified Transactions Toolbar, Metric Ribbon & Active Chips
    -------------------------------------------------------------------------- */
+
+/* Slim Metric Strip (~40px Inline Ribbon Directly Above Table) */
+.metric-ribbon {
+    min-height: 42px;
+    background-color: var(--bg-card);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-card);
+    padding: 0.55rem 1rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.metric-ribbon-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.metric-ribbon-label {
+    color: var(--text-secondary);
+}
+
+.metric-ribbon-val {
+    font-family: var(--font-sans) !important;
+    font-variant-numeric: tabular-nums !important;
+    font-feature-settings: "tnum" 1 !important;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.metric-ribbon-divider {
+    color: var(--border-color);
+    font-weight: 300;
+    user-select: none;
+}
+
+/* Unified Single Transactions Toolbar */
+.transactions-toolbar-card {
+    background-color: var(--bg-card);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.transactions-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Embedded Single-Piece Search Box */
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 240px;
+    flex: 1 1 240px;
+}
+
+.search-input-icon {
+    position: absolute;
+    left: 14px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    pointer-events: none;
+}
+
+.search-input-field {
+    padding-left: 40px !important;
+    padding-right: 38px !important;
+    height: 44px;
+    background-color: var(--bg-card) !important;
+}
+
+.search-kbd {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Toolbar Select Dropdowns */
+.toolbar-select-wrapper {
+    flex: 0 1 auto;
+}
+
+.toolbar-select {
+    height: 44px;
+    cursor: pointer;
+    background-color: var(--bg-card) !important;
+    font-size: 0.93rem;
+    font-weight: 500;
+    padding-right: 2rem !important;
+}
+
+/* More Filters Popover Menu */
+.more-filters-popover {
+    border: 1.5px solid var(--border-color) !important;
+    border-radius: var(--radius-md) !important;
+    background-color: var(--bg-card) !important;
+    box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.15) !important;
+    min-width: 300px;
+    z-index: 1050;
+}
+
+[data-theme="dark"] .more-filters-popover,
+[data-bs-theme="dark"] .more-filters-popover {
+    box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Active Filter Chips */
+.active-chips-container {
+    transition: all 0.2s ease;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    background-color: var(--bg-subtle);
+    border: 1.5px solid var(--border-color);
+    border-radius: 9999px;
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1.2;
+    transition: all 0.15s ease;
+}
+
+.filter-chip:hover {
+    border-color: var(--primary);
+}
+
+.filter-chip-remove {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font-size: 0.85rem;
+    transition: all 0.15s ease;
+}
+
+.filter-chip-remove:hover {
+    color: var(--expense-red);
+    background-color: var(--expense-bg);
+}
+
+.filter-clear-all {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.83rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: color 0.15s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.filter-clear-all:hover {
+    color: var(--expense-red) !important;
+    text-decoration: underline;
+}
+
+/* Row Checkbox & Bulk Selection */
+.form-check-input.txn-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    border: 1.5px solid var(--border-color);
+    background-color: var(--bg-card);
+    margin: 0;
+}
+
+.form-check-input.txn-checkbox:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
 
 .quick-filter-group {
     display: inline-flex;

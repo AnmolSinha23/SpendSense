@@ -3,56 +3,47 @@
 {% block title %}Transactions — SpendSense{% endblock %}
 
 {% block content %}
-<!-- Page Header (Duplicate Add Button Eliminated) -->
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+<!-- Page Header (Streamlined, No Lonely Export Button) -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
     <div>
         <h3 class="fw-bold mb-1" style="color: var(--text-main);">Transaction Ledger</h3>
-        <p class="text-secondary mb-0">Browse, filter, and manage all financial transactions (<strong>{{ transactions | length }}</strong> records)</p>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-        <a href="{{ url_for('reports.export_csv') }}" class="btn-friendly" title="Export as Spreadsheet">
-            <i class="bi bi-file-earmark-spreadsheet-fill text-success"></i>
-            <span>Export CSV</span>
-        </a>
+        <p class="text-secondary mb-0 small">Audit, filter, and manage your complete financial history with live instant search</p>
     </div>
 </div>
 
-<!-- Search and Filter Panel with Quick Filter Tabs & Keyboard Hotkey -->
-<div class="friendly-card p-3 mb-4">
-    <!-- Quick Filter Tabs (All / Income / Expense) -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-3 border-bottom" style="border-color: var(--border-color) !important;">
-        <div class="quick-filter-group">
-            <a href="{{ url_for('transactions.list_transactions') }}" class="quick-filter-btn {% if not filters.txn_type %}active{% endif %}">
-                <i class="bi bi-grid-fill"></i> All Entries
-            </a>
-            <a href="{{ url_for('transactions.list_transactions', txn_type='income') }}" class="quick-filter-btn {% if filters.txn_type == 'income' %}active{% endif %}">
-                <i class="bi bi-arrow-down-left text-success"></i> Income Only
-            </a>
-            <a href="{{ url_for('transactions.list_transactions', txn_type='expense') }}" class="quick-filter-btn {% if filters.txn_type == 'expense' %}active{% endif %}">
-                <i class="bi bi-arrow-up-right text-danger"></i> Expenses Only
-            </a>
-        </div>
-
-        <div class="text-secondary small font-mono">
-            Press <kbd class="kbd-shortcut">/</kbd> to search &bull; <kbd class="kbd-shortcut">N</kbd> for new entry
-        </div>
-    </div>
-
-    <form method="GET" action="{{ url_for('transactions.list_transactions') }}">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4 col-sm-6">
-                <label class="form-label-friendly">Search by Keyword</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-input-friendly" name="search" placeholder="Search description... (press '/')" value="{{ filters.search }}">
-                    <span class="input-group-text d-none d-md-flex"><kbd class="kbd-shortcut">/</kbd></span>
-                </div>
+<!-- Single Unified Responsive Toolbar (7 Filter Fields Collapsed) -->
+<div class="transactions-toolbar-card p-3 mb-3">
+    <form id="ledgerFilterForm" method="GET" action="{{ url_for('transactions.list_transactions') }}" onsubmit="return false;">
+        <div class="transactions-toolbar">
+            <!-- 1. Embedded Single-Piece Search Box with Embedded Icon & Shortcut Badge -->
+            <div class="search-input-wrapper">
+                <i class="bi bi-search search-input-icon"></i>
+                <input type="text" 
+                       class="form-input-friendly search-input-field" 
+                       id="ledgerSearchInput"
+                       name="search" 
+                       placeholder="Search transactions by title, note, category..." 
+                       value="{{ filters.search }}" 
+                       autocomplete="off">
+                <kbd class="search-kbd d-none d-sm-inline-flex" title="Press / to search">/</kbd>
             </div>
 
-            <div class="col-md-3 col-sm-6">
-                <label class="form-label-friendly">Category</label>
-                <select class="form-input-friendly" name="category_id">
-                    <option value="">All Categories</option>
+            <!-- 2. Smart Date Range Presets Dropdown -->
+            <div class="toolbar-select-wrapper">
+                <select class="form-input-friendly toolbar-select" name="date_preset" id="datePresetSelect" aria-label="Date Range Preset">
+                    <option value="" {% if not filters.date_preset or filters.date_preset == 'all' %}selected{% endif %}>📅 All Dates</option>
+                    <option value="this_month" {% if filters.date_preset == 'this_month' %}selected{% endif %}>📅 This Month</option>
+                    <option value="last_30_days" {% if filters.date_preset == 'last_30_days' %}selected{% endif %}>📅 Last 30 Days</option>
+                    <option value="this_quarter" {% if filters.date_preset == 'this_quarter' %}selected{% endif %}>📅 This Quarter</option>
+                    <option value="this_year" {% if filters.date_preset == 'this_year' %}selected{% endif %}>📅 This Year</option>
+                    <option value="custom" {% if filters.date_preset == 'custom' %}selected{% endif %}>📅 Custom Range...</option>
+                </select>
+            </div>
+
+            <!-- 3. Category Dropdown -->
+            <div class="toolbar-select-wrapper">
+                <select class="form-input-friendly toolbar-select" name="category_id" id="categorySelect" aria-label="Category">
+                    <option value="">🏷️ All Categories</option>
                     {% for cat in categories %}
                     <option value="{{ cat.category_id }}" {% if filters.category_id == cat.category_id|string %}selected{% endif %}>
                         {{ cat.category_name }}
@@ -61,10 +52,10 @@
                 </select>
             </div>
 
-            <div class="col-md-3 col-sm-6">
-                <label class="form-label-friendly">Account</label>
-                <select class="form-input-friendly" name="account_id">
-                    <option value="">All Accounts</option>
+            <!-- 4. Account Dropdown -->
+            <div class="toolbar-select-wrapper">
+                <select class="form-input-friendly toolbar-select" name="account_id" id="accountSelect" aria-label="Account">
+                    <option value="">💳 All Accounts</option>
                     {% for acc in accounts %}
                     <option value="{{ acc.account_id }}" {% if filters.account_id == acc.account_id|string %}selected{% endif %}>
                         {{ acc.account_name }}
@@ -73,89 +64,165 @@
                 </select>
             </div>
 
-            <div class="col-md-2 col-sm-6 d-flex gap-2">
-                <button type="submit" class="btn-friendly btn-friendly-primary w-50 justify-content-center">
-                    <i class="bi bi-funnel-fill"></i> Filter
-                </button>
-                <a href="{{ url_for('transactions.list_transactions') }}" class="btn-friendly w-50 justify-content-center">
-                    Reset
-                </a>
+            <!-- 5. Type Quick Filter (All / Expense / Income) -->
+            <div class="toolbar-select-wrapper">
+                <select class="form-input-friendly toolbar-select" name="txn_type" id="txnTypeSelect" aria-label="Transaction Type">
+                    <option value="" {% if not filters.txn_type %}selected{% endif %}>↕️ All Types</option>
+                    <option value="expense" {% if filters.txn_type == 'expense' %}selected{% endif %}>🔴 Expenses Only</option>
+                    <option value="income" {% if filters.txn_type == 'income' %}selected{% endif %}>🟢 Income Only</option>
+                </select>
             </div>
-        </div>
 
-        <!-- Optional Date & Amount Ranges -->
-        <div class="row g-2 mt-2 pt-2 border-top" style="border-color: var(--border-color) !important;">
-            <div class="col-sm-3 col-6">
-                <label class="form-label-friendly">Start Date</label>
-                <input type="date" class="form-input-friendly font-mono" name="start_date" value="{{ filters.start_date }}">
+            <!-- 6. "More Filters" Popover for Amount Range & Custom Dates -->
+            <div class="dropdown">
+                <button type="button" 
+                        class="btn-friendly dropdown-toggle {% if filters.min_amount or filters.max_amount or (filters.date_preset == 'custom' and (filters.start_date or filters.end_date)) %}btn-friendly-primary{% endif %}" 
+                        id="moreFiltersDropdownBtn"
+                        data-bs-toggle="dropdown" 
+                        data-bs-auto-close="outside" 
+                        aria-expanded="false">
+                    <i class="bi bi-sliders"></i>
+                    <span>More Filters</span>
+                    {% if filters.min_amount or filters.max_amount %}
+                    <span class="badge bg-primary text-white rounded-pill ms-1" style="font-size: 0.68rem;">1</span>
+                    {% endif %}
+                </button>
+                <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg more-filters-popover" style="min-width: 290px;">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom" style="border-color: var(--border-color) !important;">
+                        <span class="fw-bold small text-main"><i class="bi bi-funnel me-1 text-primary"></i> Advanced Filters</span>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" id="resetPopoverFilters">Clear</button>
+                    </div>
+
+                    <!-- Custom Date Range (shown when Custom selected) -->
+                    <div id="customDateRangeBox" class="mb-3 {% if filters.date_preset != 'custom' %}d-none{% endif %}">
+                        <label class="form-label-friendly small mb-1">Custom Date Range</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="text-secondary small" style="font-size: 0.78rem;">From</label>
+                                <input type="date" class="form-input-friendly py-1 px-2" style="font-size: 0.85rem;" name="start_date" id="customStartDate" value="{{ filters.start_date }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="text-secondary small" style="font-size: 0.78rem;">To</label>
+                                <input type="date" class="form-input-friendly py-1 px-2" style="font-size: 0.85rem;" name="end_date" id="customEndDate" value="{{ filters.end_date }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Amount Range -->
+                    <div>
+                        <label class="form-label-friendly small mb-1">Amount Range (₹)</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="number" step="0.01" min="0" class="form-input-friendly py-1 px-2 tabular-num" style="font-size: 0.85rem;" name="min_amount" id="minAmountInput" placeholder="Min ₹" value="{{ filters.min_amount }}">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" step="0.01" min="0" class="form-input-friendly py-1 px-2 tabular-num" style="font-size: 0.85rem;" name="max_amount" id="maxAmountInput" placeholder="Max ₹" value="{{ filters.max_amount }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-sm-3 col-6">
-                <label class="form-label-friendly">End Date</label>
-                <input type="date" class="form-input-friendly font-mono" name="end_date" value="{{ filters.end_date }}">
-            </div>
-            <div class="col-sm-3 col-6">
-                <label class="form-label-friendly">Min Amount (₹)</label>
-                <input type="number" step="0.01" class="form-input-friendly font-mono" name="min_amount" placeholder="0.00" value="{{ filters.min_amount }}">
-            </div>
-            <div class="col-sm-3 col-6">
-                <label class="form-label-friendly">Max Amount (₹)</label>
-                <input type="number" step="0.01" class="form-input-friendly font-mono" name="max_amount" placeholder="Any" value="{{ filters.max_amount }}">
+
+            <!-- Loading Spinner for Live Debounced Query -->
+            <div id="liveSearchSpinner" class="spinner-border spinner-border-sm text-primary d-none ms-1" role="status" title="Filtering...">
+                <span class="visually-hidden">Loading...</span>
             </div>
         </div>
     </form>
+
+    <!-- Active Filter Chips Bar (Dismissible Pills & Clear All) -->
+    <div id="activeFilterChipsContainer" class="active-chips-container mt-2 pt-2 border-top {% if not active_filters %}d-none{% endif %}" style="border-color: var(--border-color) !important;">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="text-secondary small fw-semibold" style="font-size: 0.82rem;"><i class="bi bi-funnel-fill text-primary me-1"></i>Active:</span>
+            {% for chip in active_filters %}
+            <span class="filter-chip">
+                <span>{{ chip.label }}</span>
+                <button type="button" class="filter-chip-remove" data-filter-key="{{ chip.key }}" title="Remove this filter" aria-label="Remove filter">
+                    <i class="bi bi-x"></i>
+                </button>
+            </span>
+            {% endfor %}
+            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 ms-1 filter-clear-all" id="clearAllFiltersBtn">
+                <i class="bi bi-x-circle me-1"></i>Clear all
+            </button>
+        </div>
+    </div>
 </div>
 
-<!-- Filter Summary Strip (Neutral slate on zero) -->
-<div class="row g-2 mb-4 font-mono tabular-num">
-    <div class="col-md-4">
-        <div class="p-3 rounded border friendly-card d-flex justify-content-between align-items-center">
-            <span class="fw-semibold text-secondary small">Total Filtered Income</span>
-            <span class="fw-bold fs-6 {% if total_income > 0 %}text-income{% else %}text-zero{% endif %}">
+<!-- Slim Metric Strip (~40px Inline Ribbon Directly Above Table) -->
+<div id="metricRibbonArea" class="metric-ribbon d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+    <div class="d-flex align-items-center gap-2 gap-md-3 flex-wrap">
+        <span class="text-secondary fw-semibold small text-uppercase" style="letter-spacing: 0.04em;">Filtered Summary:</span>
+        <div class="metric-ribbon-item">
+            <span class="metric-ribbon-label">Income:</span>
+            <span class="metric-ribbon-val text-income">
                 {% if total_income > 0 %}+{{ total_income | currency }}{% else %}₹0.00{% endif %}
             </span>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="p-3 rounded border friendly-card d-flex justify-content-between align-items-center">
-            <span class="fw-semibold text-secondary small">Total Filtered Expenses</span>
-            <span class="fw-bold fs-6 {% if total_expense > 0 %}text-expense{% else %}text-zero{% endif %}">
+        <span class="metric-ribbon-divider">&bull;</span>
+        <div class="metric-ribbon-item">
+            <span class="metric-ribbon-label">Expenses:</span>
+            <span class="metric-ribbon-val {% if total_expense > 0 %}text-expense{% else %}text-zero{% endif %}">
                 {% if total_expense > 0 %}-{{ total_expense | currency }}{% else %}₹0.00{% endif %}
             </span>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="p-3 rounded border friendly-card d-flex justify-content-between align-items-center">
-            <span class="fw-semibold text-secondary small">Net Filtered Flow</span>
-            <span class="fw-bold fs-6 {% if net_flow > 0 %}text-income{% elif net_flow < 0 %}text-expense{% else %}text-zero{% endif %}">
+        <span class="metric-ribbon-divider">&bull;</span>
+        <div class="metric-ribbon-item">
+            <span class="metric-ribbon-label">Net Flow:</span>
+            <span class="metric-ribbon-val {% if net_flow > 0 %}text-income{% elif net_flow < 0 %}text-expense{% else %}text-zero{% endif %}">
                 {% if net_flow > 0 %}+{{ net_flow | currency }}{% elif net_flow < 0 %}-{{ (net_flow | abs) | currency }}{% else %}₹0.00{% endif %}
             </span>
         </div>
     </div>
+    <div class="text-secondary small tabular-num fw-semibold">
+        <span id="ribbonRecordCount">{{ transactions | length }}</span> matching records
+    </div>
 </div>
 
 <!-- Transactions Ledger Card with Two-Line Format & 44px Hit Targets -->
-<div class="friendly-card">
-    <div class="friendly-card-header">
-        <h5 class="friendly-card-title">
-            <i class="bi bi-list-ul text-primary"></i> All Transactions
-        </h5>
-        <span class="badge-friendly badge-account-friendly font-mono">{{ transactions | length }} records</span>
+<div class="friendly-card" id="transactionsTableCard">
+    <div class="friendly-card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <h5 class="friendly-card-title mb-0">
+                <i class="bi bi-receipt text-primary"></i> All Transactions
+            </h5>
+            <span class="badge-friendly badge-account-friendly tabular-num ms-1" id="recordCounter">{{ transactions | length }} records</span>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <!-- Bulk Selection Counter -->
+            <span id="bulkSelectionCounter" class="badge-friendly badge-account-friendly d-none">
+                <span id="selectedCount" class="fw-bold tabular-num">0</span> selected
+            </span>
+
+            <!-- Relocated Export CSV Action directly on table header bar -->
+            <a href="{{ url_for('reports.export_csv', **request.args) }}" id="exportCsvBtn" class="btn-friendly btn-friendly-sm" title="Export current ledger to CSV spreadsheet">
+                <i class="bi bi-file-earmark-spreadsheet-fill text-success"></i>
+                <span>Export CSV</span>
+            </a>
+        </div>
     </div>
-    <div class="p-0">
+    <div class="p-0" id="transactionsTableArea">
         {% if transactions %}
         <div class="table-responsive">
-            <table class="table-friendly">
+            <table class="table-friendly align-middle mb-0">
                 <thead>
                     <tr>
+                        <th style="width: 44px;" class="text-center">
+                            <input type="checkbox" class="form-check-input txn-checkbox" id="selectAllCheckbox" title="Select all transactions" aria-label="Select all transactions">
+                        </th>
                         <th>Transaction Details</th>
                         <th class="d-none d-md-table-cell" style="width: 130px;">Type</th>
-                        <th class="text-end" style="width: 180px;">Amount</th>
+                        <th class="text-end" style="width: 170px;">Amount</th>
                         <th class="text-end" style="width: 190px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for txn in transactions %}
-                    <tr>
+                    <tr id="txn-row-{{ txn.transaction_id }}">
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input txn-checkbox row-select-cb" data-id="{{ txn.transaction_id }}" aria-label="Select transaction">
+                        </td>
                         <td>
                             <!-- Two-Line Ledger Entry (Zero Truncation, Senior Readable) -->
                             <div class="d-flex align-items-center gap-3">
@@ -183,7 +250,7 @@
                                 <span class="badge-friendly badge-expense-friendly">Expense</span>
                             {% endif %}
                         </td>
-                        <td class="text-end font-mono tabular-num fw-bold fs-6">
+                        <td class="text-end tabular-num fw-bold fs-6">
                             <span class="{% if txn.txn_type == 'income' %}text-income{% else %}text-expense{% endif %}">
                                 {% if txn.txn_type == 'income' %}+{% else %}-{% endif %}{{ txn.amount | currency }}
                             </span>
@@ -213,9 +280,9 @@
             <i class="bi bi-funnel empty-state-icon"></i>
             <h5 class="empty-state-title">No Transactions Found</h5>
             <p class="empty-state-desc">No transaction records match your selected search and filter criteria.</p>
-            <a href="{{ url_for('transactions.list_transactions') }}" class="btn-friendly btn-friendly-primary">
+            <button type="button" class="btn-friendly btn-friendly-primary" onclick="resetAllFiltersAndReload()">
                 <i class="bi bi-arrow-counterclockwise"></i> Reset Filters
-            </a>
+            </button>
         </div>
         {% endif %}
     </div>
@@ -250,11 +317,11 @@
                     <div class="row g-2 mb-3">
                         <div class="col-md-6">
                             <label class="form-label-friendly">Amount (₹) *</label>
-                            <input type="number" step="0.01" min="0.01" class="form-input-friendly font-mono" name="amount" placeholder="0.00" required autofocus>
+                            <input type="number" step="0.01" min="0.01" class="form-input-friendly tabular-num" name="amount" placeholder="0.00" required autofocus>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-friendly">Date *</label>
-                            <input type="date" class="form-input-friendly font-mono" name="txn_date" value="{{ today_date }}" required>
+                            <input type="date" class="form-input-friendly" name="txn_date" value="{{ today_date }}" required>
                         </div>
                     </div>
 
@@ -320,11 +387,11 @@
                     <div class="row g-2 mb-3">
                         <div class="col-md-6">
                             <label class="form-label-friendly">Amount (₹) *</label>
-                            <input type="number" step="0.01" min="0.01" class="form-input-friendly font-mono" id="editAmount" name="amount" required>
+                            <input type="number" step="0.01" min="0.01" class="form-input-friendly tabular-num" id="editAmount" name="amount" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-friendly">Date *</label>
-                            <input type="date" class="form-input-friendly font-mono" id="editDate" name="txn_date" required>
+                            <input type="date" class="form-input-friendly" id="editDate" name="txn_date" required>
                         </div>
                     </div>
 
@@ -376,7 +443,7 @@
                     <p class="text-muted mb-2">Are you sure you want to delete this transaction?</p>
                     <div class="p-3 rounded border mb-3" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important;">
                         <div class="fw-bold fs-6" id="delDesc"></div>
-                        <div class="text-danger fw-bold font-mono fs-5" id="delAmount"></div>
+                        <div class="text-danger fw-bold tabular-num fs-5" id="delAmount"></div>
                     </div>
                     <div class="small text-muted">
                         Your account balance will be automatically restored via database triggers.
@@ -394,6 +461,312 @@
 
 {% block scripts %}
 <script>
+// --- State & DOM Elements ---
+let debounceTimer = null;
+let currentAbortController = null;
+
+const filterForm = document.getElementById('ledgerFilterForm');
+const searchInput = document.getElementById('ledgerSearchInput');
+const datePresetSelect = document.getElementById('datePresetSelect');
+const categorySelect = document.getElementById('categorySelect');
+const accountSelect = document.getElementById('accountSelect');
+const txnTypeSelect = document.getElementById('txnTypeSelect');
+const customDateBox = document.getElementById('customDateRangeBox');
+const customStartDate = document.getElementById('customStartDate');
+const customEndDate = document.getElementById('customEndDate');
+const minAmountInput = document.getElementById('minAmountInput');
+const maxAmountInput = document.getElementById('maxAmountInput');
+const searchSpinner = document.getElementById('liveSearchSpinner');
+const clearAllFiltersBtn = document.getElementById('clearAllFiltersBtn');
+const resetPopoverBtn = document.getElementById('resetPopoverFilters');
+
+// --- Live Debounced Search and Auto-Update ---
+function triggerLiveFilter(debounceMs = 0) {
+    if (debounceTimer) {
+        clearTimeout(debounceTimer);
+    }
+
+    if (debounceMs > 0) {
+        if (searchSpinner) searchSpinner.classList.remove('d-none');
+        debounceTimer = setTimeout(() => {
+            executeFetchFilter();
+        }, debounceMs);
+    } else {
+        executeFetchFilter();
+    }
+}
+
+function buildFilterParams() {
+    const params = new URLSearchParams();
+
+    const searchVal = searchInput ? searchInput.value.trim() : '';
+    if (searchVal) params.set('search', searchVal);
+
+    const datePresetVal = datePresetSelect ? datePresetSelect.value.trim() : '';
+    if (datePresetVal && datePresetVal !== 'all') {
+        params.set('date_preset', datePresetVal);
+    }
+
+    if (datePresetVal === 'custom') {
+        const startVal = customStartDate ? customStartDate.value.trim() : '';
+        const endVal = customEndDate ? customEndDate.value.trim() : '';
+        if (startVal) params.set('start_date', startVal);
+        if (endVal) params.set('end_date', endVal);
+    }
+
+    const catVal = categorySelect ? categorySelect.value.trim() : '';
+    if (catVal) params.set('category_id', catVal);
+
+    const accVal = accountSelect ? accountSelect.value.trim() : '';
+    if (accVal) params.set('account_id', accVal);
+
+    const typeVal = txnTypeSelect ? txnTypeSelect.value.trim() : '';
+    if (typeVal) params.set('txn_type', typeVal);
+
+    const minVal = minAmountInput ? minAmountInput.value.trim() : '';
+    if (minVal) params.set('min_amount', minVal);
+
+    const maxVal = maxAmountInput ? maxAmountInput.value.trim() : '';
+    if (maxVal) params.set('max_amount', maxVal);
+
+    return params;
+}
+
+function executeFetchFilter() {
+    if (searchSpinner) searchSpinner.classList.remove('d-none');
+
+    // Cancel in-flight request if another query comes in
+    if (currentAbortController) {
+        currentAbortController.abort();
+    }
+    currentAbortController = new AbortController();
+
+    const params = buildFilterParams();
+    const queryString = params.toString();
+    const targetUrl = window.location.pathname + (queryString ? '?' + queryString : '');
+
+    fetch(targetUrl, {
+        signal: currentAbortController.signal,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response error');
+        return response.text();
+    })
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // 1. Replace Metric Ribbon
+        const newRibbon = doc.getElementById('metricRibbonArea');
+        const currRibbon = document.getElementById('metricRibbonArea');
+        if (newRibbon && currRibbon) {
+            currRibbon.innerHTML = newRibbon.innerHTML;
+        }
+
+        // 2. Replace Table Header & Table Area
+        const newTableCard = doc.getElementById('transactionsTableCard');
+        const currTableCard = document.getElementById('transactionsTableCard');
+        if (newTableCard && currTableCard) {
+            currTableCard.innerHTML = newTableCard.innerHTML;
+        }
+
+        // 3. Replace Active Chips Container
+        const newChips = doc.getElementById('activeFilterChipsContainer');
+        const currChips = document.getElementById('activeFilterChipsContainer');
+        if (newChips && currChips) {
+            currChips.innerHTML = newChips.innerHTML;
+            if (newChips.classList.contains('d-none')) {
+                currChips.classList.add('d-none');
+            } else {
+                currChips.classList.remove('d-none');
+            }
+        }
+
+        // 4. Update Export CSV button href
+        const newExportBtn = doc.getElementById('exportCsvBtn');
+        const currExportBtn = document.getElementById('exportCsvBtn');
+        if (newExportBtn && currExportBtn) {
+            currExportBtn.href = newExportBtn.href;
+        }
+
+        // 5. Update browser history state
+        window.history.replaceState({}, '', targetUrl);
+
+        // 6. Rebind dynamic listeners (checkboxes, chips)
+        bindDynamicEventListeners();
+    })
+    .catch(err => {
+        if (err.name !== 'AbortError') {
+            console.warn('Live filter fetch error, falling back to reload:', err);
+            window.location.href = targetUrl;
+        }
+    })
+    .finally(() => {
+        if (searchSpinner) searchSpinner.classList.add('d-none');
+    });
+}
+
+// --- Event Handlers & Watchers ---
+if (searchInput) {
+    searchInput.addEventListener('input', () => triggerLiveFilter(300));
+}
+
+if (datePresetSelect) {
+    datePresetSelect.addEventListener('change', () => {
+        if (datePresetSelect.value === 'custom') {
+            if (customDateBox) customDateBox.classList.remove('d-none');
+            const popoverBtn = document.getElementById('moreFiltersDropdownBtn');
+            if (popoverBtn) {
+                const dd = bootstrap.Dropdown.getOrCreateInstance(popoverBtn);
+                dd.show();
+            }
+        } else {
+            if (customDateBox) customDateBox.classList.add('d-none');
+            if (customStartDate) customStartDate.value = '';
+            if (customEndDate) customEndDate.value = '';
+            triggerLiveFilter(0);
+        }
+    });
+}
+
+if (categorySelect) categorySelect.addEventListener('change', () => triggerLiveFilter(0));
+if (accountSelect) accountSelect.addEventListener('change', () => triggerLiveFilter(0));
+if (txnTypeSelect) txnTypeSelect.addEventListener('change', () => triggerLiveFilter(0));
+
+if (customStartDate) customStartDate.addEventListener('change', () => triggerLiveFilter(0));
+if (customEndDate) customEndDate.addEventListener('change', () => triggerLiveFilter(0));
+
+if (minAmountInput) minAmountInput.addEventListener('input', () => triggerLiveFilter(350));
+if (maxAmountInput) maxAmountInput.addEventListener('input', () => triggerLiveFilter(350));
+
+if (resetPopoverBtn) {
+    resetPopoverBtn.addEventListener('click', () => {
+        if (minAmountInput) minAmountInput.value = '';
+        if (maxAmountInput) maxAmountInput.value = '';
+        if (customStartDate) customStartDate.value = '';
+        if (customEndDate) customEndDate.value = '';
+        if (datePresetSelect && datePresetSelect.value === 'custom') {
+            datePresetSelect.value = '';
+            if (customDateBox) customDateBox.classList.add('d-none');
+        }
+        triggerLiveFilter(0);
+    });
+}
+
+function resetAllFiltersAndReload() {
+    if (searchInput) searchInput.value = '';
+    if (datePresetSelect) datePresetSelect.value = '';
+    if (customDateBox) customDateBox.classList.add('d-none');
+    if (customStartDate) customStartDate.value = '';
+    if (customEndDate) customEndDate.value = '';
+    if (categorySelect) categorySelect.value = '';
+    if (accountSelect) accountSelect.value = '';
+    if (txnTypeSelect) txnTypeSelect.value = '';
+    if (minAmountInput) minAmountInput.value = '';
+    if (maxAmountInput) maxAmountInput.value = '';
+    triggerLiveFilter(0);
+}
+
+// --- Dynamic Event Listeners for Chips & Checkboxes ---
+function bindDynamicEventListeners() {
+    // 1. Dismissible Chips
+    document.querySelectorAll('.filter-chip-remove').forEach(btn => {
+        btn.onclick = function(e) {
+            e.preventDefault();
+            const key = this.getAttribute('data-filter-key');
+            if (key === 'search' && searchInput) searchInput.value = '';
+            if ((key === 'date_preset' || key === 'date_range') && datePresetSelect) {
+                datePresetSelect.value = '';
+                if (customDateBox) customDateBox.classList.add('d-none');
+                if (customStartDate) customStartDate.value = '';
+                if (customEndDate) customEndDate.value = '';
+            }
+            if (key === 'category_id' && categorySelect) categorySelect.value = '';
+            if (key === 'account_id' && accountSelect) accountSelect.value = '';
+            if (key === 'txn_type' && txnTypeSelect) txnTypeSelect.value = '';
+            if (key === 'min_amount' && minAmountInput) minAmountInput.value = '';
+            if (key === 'max_amount' && maxAmountInput) maxAmountInput.value = '';
+            triggerLiveFilter(0);
+        };
+    });
+
+    const clearAllBtn = document.getElementById('clearAllFiltersBtn');
+    if (clearAllBtn) {
+        clearAllBtn.onclick = function(e) {
+            e.preventDefault();
+            resetAllFiltersAndReload();
+        };
+    }
+
+    // 2. Bulk Row Selection Checkboxes
+    const selectAllCb = document.getElementById('selectAllCheckbox');
+    const rowCheckboxes = document.querySelectorAll('.row-select-cb');
+    const bulkCounter = document.getElementById('bulkSelectionCounter');
+    const selectedCount = document.getElementById('selectedCount');
+
+    function updateBulkCount() {
+        const checkedCount = document.querySelectorAll('.row-select-cb:checked').length;
+        if (selectedCount) selectedCount.textContent = checkedCount;
+        if (bulkCounter) {
+            if (checkedCount > 0) {
+                bulkCounter.classList.remove('d-none');
+            } else {
+                bulkCounter.classList.add('d-none');
+            }
+        }
+        if (selectAllCb) {
+            selectAllCb.checked = rowCheckboxes.length > 0 && checkedCount === rowCheckboxes.length;
+            selectAllCb.indeterminate = checkedCount > 0 && checkedCount < rowCheckboxes.length;
+        }
+    }
+
+    if (selectAllCb) {
+        selectAllCb.onclick = function() {
+            rowCheckboxes.forEach(cb => {
+                cb.checked = selectAllCb.checked;
+            });
+            updateBulkCount();
+        };
+    }
+
+    rowCheckboxes.forEach(cb => {
+        cb.onchange = updateBulkCount;
+    });
+
+    updateBulkCount();
+}
+
+// Initial bind on page load
+bindDynamicEventListeners();
+
+// --- Keyboard Shortcuts (N for Modal, / for Search) ---
+document.addEventListener('keydown', function(e) {
+    // If inside an active input or textarea, don't trigger global hotkeys (except Escape)
+    const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+    const isTyping = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+
+    if (e.key === '/' && !isTyping) {
+        e.preventDefault();
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    } else if (e.key === 'Escape' && document.activeElement === searchInput) {
+        searchInput.blur();
+    } else if ((e.key === 'n' || e.key === 'N') && !isTyping) {
+        e.preventDefault();
+        const addModalEl = document.getElementById('addTxnModal');
+        if (addModalEl) {
+            const modal = bootstrap.Modal.getOrCreateInstance(addModalEl);
+            modal.show();
+        }
+    }
+});
+
+// --- Modal Helper Functions ---
 function openEditTxnModal(id, accountId, categoryId, amount, type, dateStr, description) {
     document.getElementById('editTxnForm').action = '/transactions/' + id + '/edit';
     document.getElementById('editAmount').value = amount;

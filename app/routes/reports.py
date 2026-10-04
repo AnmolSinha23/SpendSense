@@ -6,7 +6,8 @@ and provides CSV data export using analytical queries and `view_monthly_category
 
 import io
 import csv
-from datetime import datetime
+import calendar
+from datetime import datetime, date, timedelta
 from decimal import Decimal
 from flask import Blueprint, render_template, request, jsonify, make_response, session
 from app.db import query_db
@@ -185,11 +186,40 @@ def chart_data():
 @login_required
 def export_csv():
     """
-    Generates and downloads a CSV spreadsheet containing all user transactions.
+    Generates and downloads a CSV spreadsheet containing all or filtered user transactions.
     """
     user_id = session['user_id']
-    transactions = query_db(
-        """
+
+    date_preset = request.args.get('date_preset', '').strip()
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
+    category_id = request.args.get('category_id', '').strip()
+    account_id = request.args.get('account_id', '').strip()
+    txn_type = request.args.get('txn_type', '').strip()
+    search = request.args.get('search', '').strip()
+    min_amount = request.args.get('min_amount', '').strip()
+    max_amount = request.args.get('max_amount', '').strip()
+
+    today = date.today()
+    if date_preset == 'this_month':
+        start_date = today.replace(day=1).strftime("%Y-%m-%d")
+        _, last_day = calendar.monthrange(today.year, today.month)
+        end_date = date(today.year, today.month, last_day).strftime("%Y-%m-%d")
+    elif date_preset == 'last_30_days':
+        start_date = (today - timedelta(days=30)).strftime("%Y-%m-%d")
+        end_date = today.strftime("%Y-%m-%d")
+    elif date_preset == 'this_quarter':
+        quarter = (today.month - 1) // 3 + 1
+        q_start_month = (quarter - 1) * 3 + 1
+        q_end_month = q_start_month + 2
+        _, last_day = calendar.monthrange(today.year, q_end_month)
+        start_date = date(today.year, q_start_month, 1).strftime("%Y-%m-%d")
+        end_date = date(today.year, q_end_month, last_day).strftime("%Y-%m-%d")
+    elif date_preset == 'this_year':
+        start_date = date(today.year, 1, 1).strftime("%Y-%m-%d")
+        end_date = date(today.year, 12, 31).strftime("%Y-%m-%d")
+
+    query = """
         SELECT
             t.transaction_id,
             t.txn_date,
@@ -202,10 +232,43 @@ def export_csv():
         INNER JOIN accounts a ON t.account_id = a.account_id
         INNER JOIN categories c ON t.category_id = c.category_id
         WHERE t.user_id = %s
-        ORDER BY t.txn_date DESC, t.transaction_id DESC
-        """,
-        (user_id,)
-    )
+    """
+    params = [user_id]
+
+    if start_date:
+        query += " AND t.txn_date >= %s"
+        params.append(start_date)
+    if end_date:
+        query += " AND t.txn_date <= %s"
+        params.append(end_date)
+    if category_id:
+        query += " AND t.category_id = %s"
+        params.append(category_id)
+    if account_id:
+        query += " AND t.account_id = %s"
+        params.append(account_id)
+    if txn_type in ('income', 'expense'):
+        query += " AND t.txn_type = %s"
+        params.append(txn_type)
+    if search:
+        query += " AND (t.description LIKE %s OR c.category_name LIKE %s)"
+        pattern = f"%{search}%"
+        params.extend([pattern, pattern])
+    if min_amount:
+        try:
+            query += " AND t.amount >= %s"
+            params.append(float(min_amount))
+        except ValueError:
+            pass
+    if max_amount:
+        try:
+            query += " AND t.amount <= %s"
+            params.append(float(max_amount))
+        except ValueError:
+            pass
+
+    query += " ORDER BY t.txn_date DESC, t.transaction_id DESC"
+    transactions = query_db(query, tuple(params))
 
     # Generate CSV stream in memory
     si = io.StringIO()
