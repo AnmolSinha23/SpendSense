@@ -1,96 +1,97 @@
 {% extends "base.html" %}
 
-{% block title %}Reports & Analytics - SpendSense{% endblock %}
+{% block title %}Reports & Analytics — SpendSense{% endblock %}
 
 {% block content %}
-<div class="row align-items-center mb-4">
-    <div class="col-md-6">
-        <h3 class="fw-bold mb-1">Financial Analytics & Reports</h3>
-        <p class="text-muted mb-0">Interactive visual breakdowns powered by MySQL analytical views and aggregates</p>
+<!-- Page Header -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1" style="color: var(--text-main);">Reports & Analytics</h3>
+        <p class="text-muted mb-0">Visual spending breakdowns and trends for <strong>{{ selected_month }}/{{ selected_year }}</strong></p>
     </div>
-    <div class="col-md-6 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end align-items-center gap-2">
-        <form method="GET" action="{{ url_for('reports.index') }}" class="d-flex gap-2">
-            <select name="month" id="reportMonth" class="form-select form-select-sm" onchange="this.form.submit()">
+    <div class="d-flex align-items-center gap-2">
+        <form method="GET" action="{{ url_for('reports.index') }}" class="d-flex gap-1">
+            <select name="month" id="reportMonth" class="form-input-friendly py-1" style="width: auto;" onchange="this.form.submit()">
                 {% for m_num, m_name in months_list %}
                 <option value="{{ m_num }}" {% if selected_month == m_num %}selected{% endif %}>{{ m_name }}</option>
                 {% endfor %}
             </select>
-            <select name="year" id="reportYear" class="form-select form-select-sm" onchange="this.form.submit()">
+            <select name="year" id="reportYear" class="form-input-friendly py-1" style="width: auto;" onchange="this.form.submit()">
                 {% for y in range(current_year - 1, current_year + 2) %}
                 <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
                 {% endfor %}
             </select>
         </form>
 
-        <a href="{{ url_for('reports.export_csv') }}" class="btn btn-outline-primary btn-sm px-3 rounded-pill text-nowrap">
-            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
+        <a href="{{ url_for('reports.export_csv') }}" class="btn-friendly">
+            <i class="bi bi-file-earmark-spreadsheet-fill text-success"></i>
+            <span>Export CSV</span>
         </a>
     </div>
 </div>
 
-<!-- Month Summary Cards -->
-<div class="row g-3 mb-4">
+<!-- 3 Month Summary Cards -->
+<div class="row g-3 mb-4 font-mono">
     <div class="col-md-4">
-        <div class="card stat-card p-3 bg-white border-start border-4 border-success">
-            <span class="text-muted small fw-semibold text-uppercase">Month's Inflow</span>
-            <h4 class="fw-bold mb-0 mt-1 text-success">+{{ total_income | currency }}</h4>
-            <span class="small text-muted">{{ category_incomes | length }} income category(s)</span>
+        <div class="metric-summary-card">
+            <div class="metric-title-small">Total Month's Income</div>
+            <div class="metric-big-number text-income">+{{ total_income | currency }}</div>
+            <div class="metric-helper-text">{{ category_incomes | length }} Income Category(s)</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card stat-card p-3 bg-white border-start border-4 border-danger">
-            <span class="text-muted small fw-semibold text-uppercase">Month's Outflow</span>
-            <h4 class="fw-bold mb-0 mt-1 text-danger">-{{ total_expense | currency }}</h4>
-            <span class="small text-muted">{{ category_expenses | length }} expense category(s)</span>
+        <div class="metric-summary-card">
+            <div class="metric-title-small">Total Month's Spending</div>
+            <div class="metric-big-number text-expense">-{{ total_expense | currency }}</div>
+            <div class="metric-helper-text">{{ category_expenses | length }} Expense Category(s)</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card stat-card p-3 bg-white border-start border-4 border-primary">
-            <span class="text-muted small fw-semibold text-uppercase">Net Monthly Flow</span>
-            <h4 class="fw-bold mb-0 mt-1 {% if (total_income - total_expense) >= 0 %}text-primary{% else %}text-danger{% endif %}">
+        <div class="metric-summary-card">
+            <div class="metric-title-small">Net Monthly Balance</div>
+            <div class="metric-big-number {% if (total_income - total_expense) >= 0 %}text-income{% else %}text-expense{% endif %}">
                 {{ (total_income - total_expense) | currency }}
-            </h4>
-            <span class="small text-muted">Inflow minus outflow</span>
+            </div>
+            <div class="metric-helper-text">Total income minus expenses</div>
         </div>
     </div>
 </div>
 
-<!-- Interactive Charts Section -->
+<!-- Interactive Charts Grid -->
 <div class="row g-4 mb-4">
-    <!-- Category Spend Doughnut Chart -->
+    <!-- Category Doughnut Chart -->
     <div class="col-lg-5">
-        <div class="card card-custom h-100">
-            <div class="card-header card-header-clean d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-pie-chart-fill text-primary"></i>
-                    <span class="fw-bold">Category Spend Breakdown</span>
-                </div>
-                <span class="badge bg-secondary-subtle text-secondary small">This Month</span>
+        <div class="friendly-card h-100">
+            <div class="friendly-card-header">
+                <h5 class="friendly-card-title">
+                    <i class="bi bi-pie-chart-fill text-primary"></i> Spending by Category
+                </h5>
+                <span class="badge-friendly badge-account-friendly">This Month</span>
             </div>
-            <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
-                <div style="position: relative; width: 100%; max-width: 320px; height: 300px;">
+            <div class="p-3 d-flex flex-column align-items-center justify-content-center">
+                <div style="position: relative; width: 100%; max-width: 320px; height: 280px;">
                     <canvas id="categoryPieChart"></canvas>
                 </div>
-                <div id="noExpenseAlert" class="text-muted text-center py-4 d-none">
-                    <i class="bi bi-pie-chart fs-1 d-block mb-2"></i>
-                    No expenses recorded in this period.
+                <div id="noExpenseAlert" class="empty-state-friendly w-100 d-none py-4">
+                    <i class="bi bi-pie-chart empty-state-icon"></i>
+                    <h6 class="empty-state-title">No Expenses Recorded</h6>
+                    <p class="empty-state-desc">There are no expense records for this selected month.</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Monthly Trends Bar / Line Chart -->
+    <!-- Monthly Trend Bar Chart -->
     <div class="col-lg-7">
-        <div class="card card-custom h-100">
-            <div class="card-header card-header-clean d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-graph-up-arrow text-primary"></i>
-                    <span class="fw-bold">Income vs. Expense Trend</span>
-                </div>
-                <span class="badge bg-secondary-subtle text-secondary small">Last 6 Months</span>
+        <div class="friendly-card h-100">
+            <div class="friendly-card-header">
+                <h5 class="friendly-card-title">
+                    <i class="bi bi-bar-chart-line-fill text-primary"></i> Income vs. Spending Trend
+                </h5>
+                <span class="badge-friendly badge-account-friendly">Last 6 Months</span>
             </div>
-            <div class="card-body p-3">
-                <div style="position: relative; width: 100%; height: 300px;">
+            <div class="p-3">
+                <div style="position: relative; width: 100%; height: 280px;">
                     <canvas id="trendBarChart"></canvas>
                 </div>
             </div>
@@ -98,27 +99,26 @@
     </div>
 </div>
 
-<!-- Category Detailed Metrics Table (From View) -->
-<div class="card card-custom mb-4">
-    <div class="card-header card-header-clean d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-table text-primary"></i>
-            <span class="fw-bold">Detailed Category Summary</span>
-            <span class="badge bg-primary-subtle text-primary">From MySQL VIEW: view_monthly_category_summary</span>
-        </div>
+<!-- Detailed Category Summary Table -->
+<div class="friendly-card mb-4">
+    <div class="friendly-card-header">
+        <h5 class="friendly-card-title">
+            <i class="bi bi-table text-primary"></i> Category Spending Breakdown
+        </h5>
+        <span class="badge-friendly badge-account-friendly">Powered by MySQL VIEW: view_monthly_category_summary</span>
     </div>
-    <div class="card-body p-0">
+    <div class="p-0">
         {% if category_expenses %}
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+            <table class="table-friendly">
+                <thead>
                     <tr>
                         <th>Category</th>
                         <th>Type</th>
                         <th class="text-center">Transactions</th>
-                        <th class="text-end">Avg. / Transaction</th>
-                        <th class="text-end">Total Amount</th>
-                        <th class="text-end">% of Total Expense</th>
+                        <th class="text-end">Average / Transaction</th>
+                        <th class="text-end">Total Spent</th>
+                        <th class="text-end" style="width: 200px;">% of Spending</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -127,20 +127,20 @@
                     <tr>
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                <div class="stat-icon-box bg-light text-secondary" style="width: 32px; height: 32px;">
+                                <span class="badge-friendly badge-account-friendly p-1">
                                     <i class="bi {{ cat.category_icon or 'bi-tag' }}"></i>
-                                </div>
-                                <span class="fw-semibold text-dark">{{ cat.category_name }}</span>
+                                </span>
+                                <span class="fw-semibold">{{ cat.category_name }}</span>
                             </div>
                         </td>
-                        <td><span class="badge badge-expense">Expense</span></td>
-                        <td class="text-center fw-semibold text-muted">{{ cat.transaction_count }}</td>
-                        <td class="text-end text-muted">{{ cat.avg_transaction_amount | currency }}</td>
-                        <td class="text-end fw-bold text-danger">{{ cat.total_amount | currency }}</td>
-                        <td class="text-end">
-                            <span class="fw-semibold text-dark">{{ "%.1f"|format(pct) }}%</span>
-                            <div class="progress mt-1" style="height: 4px;">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: {{ pct }}%"></div>
+                        <td><span class="badge-friendly badge-expense-friendly">Expense</span></td>
+                        <td class="text-center font-mono text-muted">{{ cat.transaction_count }}</td>
+                        <td class="text-end font-mono text-muted">{{ cat.avg_transaction_amount | currency }}</td>
+                        <td class="text-end font-mono fw-bold text-expense">{{ cat.total_amount | currency }}</td>
+                        <td class="text-end font-mono">
+                            <span class="fw-bold">{{ "%.1f"|format(pct) }}%</span>
+                            <div class="progress-friendly mt-1">
+                                <div class="progress-friendly-fill" style="width: {{ pct }}%; background-color: var(--expense-red);"></div>
                             </div>
                         </td>
                     </tr>
@@ -149,21 +149,23 @@
             </table>
         </div>
         {% else %}
-        <div class="text-center py-4 text-muted">
-            <p class="mb-0">No expense records found for this month.</p>
+        <div class="empty-state-friendly">
+            <i class="bi bi-inbox empty-state-icon"></i>
+            <h5 class="empty-state-title">No Spending in This Period</h5>
+            <p class="empty-state-desc">No expense records found for {{ selected_month }}/{{ selected_year }}.</p>
         </div>
         {% endif %}
     </div>
 </div>
 
-<!-- Viva Note Box -->
-<div class="card card-custom p-4 bg-light border">
-    <div class="d-flex align-items-center gap-2 mb-2 text-primary fw-bold">
+<!-- DBMS Project Technical Explanation Note -->
+<div class="p-4 rounded border friendly-card" style="background-color: var(--bg-subtle);">
+    <div class="d-flex align-items-center gap-2 fw-bold text-primary mb-2">
         <i class="bi bi-mortarboard-fill fs-5"></i>
-        <span>DBMS Viva Explanation: How this page works</span>
+        <span>DBMS Project Note: How This Report Works</span>
     </div>
-    <p class="small text-muted mb-0">
-        This report is powered directly by <code>view_monthly_category_summary</code>, a relational VIEW that aggregates the base tables <code>transactions</code>, <code>categories</code>, and <code>users</code> using <code>INNER JOIN</code>, <code>GROUP BY (user_id, year, month, category_id)</code>, and aggregate functions: <code>SUM(amount)</code>, <code>COUNT(transaction_id)</code>, and <code>AVG(amount)</code>. No ORM computations are performed in Python.
+    <p class="small text-muted mb-0" style="line-height: 1.6;">
+        This reports page is powered by the relational database view <code>view_monthly_category_summary</code>. Instead of doing math in Python, MySQL runs an <code>INNER JOIN</code> across the <code>transactions</code> and <code>categories</code> tables, performs a <code>GROUP BY</code> on user, year, month, and category, and calculates summary metrics using <code>SUM()</code>, <code>COUNT()</code>, and <code>AVG()</code> directly in the database engine.
     </p>
 </div>
 {% endblock %}

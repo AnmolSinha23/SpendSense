@@ -1,58 +1,62 @@
 {% extends "base.html" %}
 
-{% block title %}Sign In - SpendSense{% endblock %}
+{% block title %}Sign In — SpendSense{% endblock %}
 
-{% block content %}
-<div class="row justify-content-center align-items-center" style="min-height: 75vh;">
-    <div class="col-md-5 col-lg-4">
-        <div class="card card-custom p-4 shadow-lg border-0">
+{% block auth_content %}
+<div class="row justify-content-center align-items-center py-4" style="min-height: 75vh;">
+    <div class="col-md-6 col-lg-4">
+        <div class="friendly-card p-4 shadow-sm">
+            <!-- Header -->
             <div class="text-center mb-4">
-                <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-3">
-                    <i class="bi bi-shield-lock-fill fs-2"></i>
+                <div class="brand-icon mx-auto mb-2" style="width: 48px; height: 48px; font-size: 1.5rem;">
+                    <i class="bi bi-wallet2"></i>
                 </div>
-                <h4 class="fw-bold mb-1">Welcome to SpendSense</h4>
-                <p class="text-muted small">Sign in to manage your expenditures and accounts</p>
+                <h4 class="fw-bold mb-1" style="color: var(--text-main);">Welcome to SpendSense</h4>
+                <p class="text-muted small mb-0">Sign in to track your budget, accounts, and expenses</p>
             </div>
 
+            <!-- Login Form -->
             <form action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST">
                 <div class="mb-3">
-                    <label class="form-label small fw-semibold text-secondary">Email Address</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
-                        <input type="email" class="form-control border-start-0 ps-0" name="email" id="loginEmail" placeholder="name@example.com" value="{{ email if email else '' }}" required autofocus>
-                    </div>
+                    <label class="form-label-friendly" for="loginEmail">Email Address</label>
+                    <input type="email" class="form-input-friendly" name="email" id="loginEmail" placeholder="e.g. rahul@example.com" value="{{ email if email else '' }}" required autofocus>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold text-secondary">Password</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-key text-muted"></i></span>
-                        <input type="password" class="form-control border-start-0 ps-0" name="password" id="loginPassword" placeholder="••••••••" required>
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label-friendly mb-0" for="loginPassword">Password</label>
                     </div>
+                    <input type="password" class="form-input-friendly" name="password" id="loginPassword" placeholder="Enter your password" required>
                 </div>
 
                 <div class="d-grid mb-3">
-                    <button type="submit" class="btn btn-primary py-2 fw-semibold rounded-3 shadow-sm">
-                        Sign In <i class="bi bi-arrow-right ms-1"></i>
+                    <button type="submit" class="btn-friendly btn-friendly-primary py-2 justify-content-center fs-6">
+                        <span>Sign In</span>
+                        <i class="bi bi-box-arrow-in-right ms-1"></i>
                     </button>
                 </div>
             </form>
 
-            <!-- Demo Credentials Helper for Examiners/Viva -->
-            <div class="p-3 bg-light rounded-3 border mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="fw-bold small text-primary"><i class="bi bi-info-circle me-1"></i> Quick Demo Login</span>
-                    <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 small" onclick="fillDemoCredentials()">Fill Demo</button>
+            <!-- Quick Demo Credentials Box for Examiners & Reviewers -->
+            <div class="p-3 rounded border mb-3" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small fw-bold text-primary">
+                        <i class="bi bi-person-check-fill me-1"></i> Evaluator Demo Login
+                    </span>
+                    <button type="button" class="btn-friendly py-0 px-2 small" style="font-size: 0.75rem;" onclick="fillDemoCredentials()">
+                        <i class="bi bi-magic me-1"></i> Auto-Fill
+                    </button>
                 </div>
-                <div class="small text-muted font-monospace">
-                    <div><strong>Email:</strong> rahul@example.com</div>
-                    <div><strong>Pass:</strong> Password@123</div>
+                <div class="small text-muted font-mono" style="font-size: 0.8rem; line-height: 1.5;">
+                    <div>Email: <strong style="color: var(--text-main);">rahul@example.com</strong></div>
+                    <div>Password: <strong style="color: var(--text-main);">Password@123</strong></div>
                 </div>
             </div>
 
-            <div class="text-center">
-                <span class="small text-muted">Don't have an account? </span>
-                <a href="{{ url_for('auth.register') }}" class="small fw-semibold text-decoration-none">Sign Up</a>
+            <!-- Register Link -->
+            <div class="text-center small">
+                <span class="text-muted">Don't have an account? </span>
+                <a href="{{ url_for('auth.register') }}" class="fw-bold text-decoration-none" style="color: var(--primary);">Create an account</a>
             </div>
         </div>
     </div>

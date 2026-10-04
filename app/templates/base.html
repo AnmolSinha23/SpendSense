@@ -1,93 +1,99 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SpendSense - Personal Expenditure Tracker{% endblock %}</title>
-    <!-- Google Fonts: Inter -->
+    <title>{% block title %}SpendSense — Personal Expenditure Tracking System{% endblock %}</title>
+
+    <!-- Immediate Theme Application to prevent flicker -->
+    <script>
+        const savedTheme = localStorage.getItem('spendsense-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- Chart.js -->
+    <!-- Chart.js 4.4 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+    <!-- SpendSense Accessible Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 
-    <!-- Main Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+    <!-- Accessible Main Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg main-navbar sticky-top py-2">
         <div class="container-fluid px-lg-4">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('dashboard.index') if session.get('user_id') else url_for('auth.login') }}">
-                <span class="p-2 rounded-3 bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                    <i class="bi bi-wallet2 fs-5"></i>
+            <!-- Brand -->
+            <a class="brand-box" href="{{ url_for('dashboard.index') if session.get('user_id') else url_for('auth.login') }}">
+                <span class="brand-icon">
+                    <i class="bi bi-wallet2"></i>
                 </span>
                 <span>SpendSense</span>
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
+            <!-- Mobile Toggle Button -->
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navContent" aria-controls="navContent" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="bi bi-list fs-2" style="color: var(--text-main);"></i>
             </button>
 
-            <div class="collapse navbar-collapse" id="navbarContent">
+            <!-- Navigation Links -->
+            <div class="collapse navbar-collapse" id="navContent">
                 {% if session.get('user_id') %}
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-1">
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.index' else '' }}" href="{{ url_for('dashboard.index') }}">
-                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'transactions.list_transactions' else '' }}" href="{{ url_for('transactions.list_transactions') }}">
-                            <i class="bi bi-arrow-left-right me-1"></i> Transactions
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'accounts.list_accounts' else '' }}" href="{{ url_for('accounts.list_accounts') }}">
-                            <i class="bi bi-bank me-1"></i> Accounts
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'budgets.list_budgets' else '' }}" href="{{ url_for('budgets.list_budgets') }}">
-                            <i class="bi bi-pie-chart me-1"></i> Budgets
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'categories.list_categories' else '' }}" href="{{ url_for('categories.list_categories') }}">
-                            <i class="bi bi-tags me-1"></i> Categories
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'reports.index' else '' }}" href="{{ url_for('reports.index') }}">
-                            <i class="bi bi-bar-chart-line me-1"></i> Reports
-                        </a>
-                    </li>
-                </ul>
+                <div class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-1">
+                    <a class="nav-link-item {{ 'active' if request.endpoint == 'dashboard.index' else '' }}" href="{{ url_for('dashboard.index') }}">
+                        <i class="bi bi-grid-fill"></i> Dashboard
+                    </a>
+                    <a class="nav-link-item {{ 'active' if request.endpoint == 'transactions.list_transactions' else '' }}" href="{{ url_for('transactions.list_transactions') }}">
+                        <i class="bi bi-receipt"></i> Transactions
+                    </a>
+                    <a class="nav-link-item {{ 'active' if request.endpoint == 'accounts.list_accounts' else '' }}" href="{{ url_for('accounts.list_accounts') }}">
+                        <i class="bi bi-bank2"></i> Accounts
+                    </a>
+                    <a class="nav-link-item {{ 'active' if request.endpoint == 'budgets.list_budgets' else '' }}" href="{{ url_for('budgets.list_budgets') }}">
+                        <i class="bi bi-pie-chart-fill"></i> Budgets
+                    </a>
+                    <a class="nav-link-item {{ 'active' if request.endpoint == 'categories.list_categories' else '' }}" href="{{ url_for('categories.list_categories') }}">
+                        <i class="bi bi-tags-fill"></i> Categories
+                    </a>
+                    <a class="nav-link-item {{ 'active' if request.endpoint == 'reports.index' else '' }}" href="{{ url_for('reports.index') }}">
+                        <i class="bi bi-bar-chart-fill"></i> Reports
+                    </a>
+                </div>
 
-                <div class="d-flex align-items-center gap-3">
-                    <!-- Quick Add Transaction Button -->
-                    <button class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#quickAddTxnModal">
-                        <i class="bi bi-plus-lg"></i>
-                        <span>Add Txn</span>
+                <!-- Right Utilities -->
+                <div class="d-flex align-items-center gap-2">
+                    <!-- Light / Dark Mode Toggle Button -->
+                    <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Switch Light / Dark Theme">
+                        <i class="bi bi-moon-stars" id="themeIcon"></i>
                     </button>
 
-                    <!-- User Profile Dropdown -->
+                    <!-- Add Transaction Button -->
+                    <button type="button" class="btn-friendly btn-friendly-primary" data-bs-toggle="modal" data-bs-target="#quickAddTxnModal">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        <span>Add Transaction</span>
+                    </button>
+
+                    <!-- User Account Dropdown -->
                     <div class="dropdown">
-                        <a class="d-flex align-items-center gap-2 text-white text-decoration-none dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 34px; height: 34px; font-weight: 600;">
+                        <button class="btn-friendly dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="rounded-circle d-inline-flex align-items-center justify-content-center text-white me-1" style="width: 26px; height: 26px; background-color: var(--primary); font-size: 0.8rem; font-weight: 700;">
                                 {{ session.get('user_name', 'U')[0] | upper }}
-                            </div>
-                            <span class="d-none d-sm-inline">{{ session.get('user_name') }}</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                            <li><h6 class="dropdown-header">{{ session.get('user_email') }}</h6></li>
-                            <li><hr class="dropdown-divider"></li>
+                            </span>
+                            <span>{{ session.get('user_name') }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border p-2" style="background-color: var(--bg-card); border-color: var(--border-color) !important;">
+                            <li><span class="dropdown-item-text small text-muted font-mono">{{ session.get('user_email') }}</span></li>
+                            <li><hr class="dropdown-divider" style="border-color: var(--border-color);"></li>
                             <li>
-                                <a class="dropdown-item text-danger d-flex align-items-center gap-2" href="{{ url_for('auth.logout') }}">
+                                <a class="dropdown-item text-danger fw-semibold d-flex align-items-center gap-2 rounded py-1" href="{{ url_for('auth.logout') }}">
                                     <i class="bi bi-box-arrow-right"></i> Sign Out
                                 </a>
                             </li>
@@ -95,118 +101,124 @@
                     </div>
                 </div>
                 {% else %}
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 gap-2">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.login') }}">Sign In</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-primary rounded-pill px-3" href="{{ url_for('auth.register') }}">Create Account</a>
-                    </li>
-                </ul>
+                <!-- Logged Out Navbar -->
+                <div class="navbar-nav ms-auto align-items-center gap-2">
+                    <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Switch Light / Dark Theme">
+                        <i class="bi bi-moon-stars" id="themeIcon"></i>
+                    </button>
+                    <a class="btn-friendly" href="{{ url_for('auth.login') }}">Sign In</a>
+                    <a class="btn-friendly btn-friendly-primary" href="{{ url_for('auth.register') }}">Create Account</a>
+                </div>
                 {% endif %}
             </div>
         </div>
     </nav>
 
-    <!-- Flash Messages Container -->
+    <!-- Flash Notifications Container -->
     <div class="container-fluid px-lg-4 mt-3">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center" role="alert">
-                        <i class="bi {% if category == 'success' %}bi-check-circle-fill text-success{% elif category == 'danger' %}bi-exclamation-octagon-fill text-danger{% elif category == 'warning' %}bi-exclamation-triangle-fill text-warning{% else %}bi-info-circle-fill text-info{% endif %} fs-5 me-2"></i>
-                        <div>{{ message }}</div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="alert-friendly alert-friendly-{{ category }}" role="alert">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi {% if category == 'success' %}bi-check-circle-fill{% elif category == 'danger' %}bi-exclamation-octagon-fill{% elif category == 'warning' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %} fs-5"></i>
+                            <span class="fw-medium">{{ message }}</span>
+                        </div>
+                        <button type="button" class="btn-close" style="font-size: 0.75rem;" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
     </div>
 
-    <!-- Main Page Body -->
-    <main class="container-fluid px-lg-4 py-3">
+    <!-- Main Page Content -->
+    <main class="container-fluid px-lg-4 py-3 flex-fill">
         {% block content %}{% endblock %}
+        {% block auth_content %}{% endblock %}
     </main>
 
-    <!-- Global Quick Add Transaction Modal -->
+    <!-- Quick Add Transaction Modal -->
     {% if session.get('user_id') %}
     <div class="modal fade" id="quickAddTxnModal" tabindex="-1" aria-labelledby="quickAddTxnModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
+            <div class="modal-content modal-friendly-content">
                 <form action="{{ url_for('transactions.add_transaction') }}" method="POST">
-                    <div class="modal-header">
-                        <h5 class="modal-title fw-bold" id="quickAddTxnModalLabel">
-                            <i class="bi bi-plus-circle text-primary me-1"></i> Add New Transaction
+                    <div class="modal-friendly-header">
+                        <h5 class="friendly-card-title fs-6" id="quickAddTxnModalLabel">
+                            <i class="bi bi-plus-circle text-primary"></i> Add New Transaction
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="p-3">
+                        <!-- Type Radio Options -->
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Transaction Type</label>
-                            <div class="d-flex gap-3">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="txn_type" id="quickExpense" value="expense" checked>
-                                    <label class="form-check-label text-danger fw-semibold" for="quickExpense">
+                            <label class="form-label-friendly">Transaction Type</label>
+                            <div class="d-flex gap-2">
+                                <label class="flex-fill">
+                                    <input type="radio" class="btn-check" name="txn_type" id="quickExp" value="expense" checked>
+                                    <label class="btn-friendly w-100 justify-content-center text-expense fw-bold" for="quickExp">
                                         <i class="bi bi-arrow-down-circle"></i> Expense
                                     </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="txn_type" id="quickIncome" value="income">
-                                    <label class="form-check-label text-success fw-semibold" for="quickIncome">
+                                </label>
+                                <label class="flex-fill">
+                                    <input type="radio" class="btn-check" name="txn_type" id="quickInc" value="income">
+                                    <label class="btn-friendly w-100 justify-content-center text-income fw-bold" for="quickInc">
                                         <i class="bi bi-arrow-up-circle"></i> Income
                                     </label>
-                                </div>
+                                </label>
                             </div>
                         </div>
 
                         <div class="row g-2 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Amount (₹) <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" min="0.01" class="form-control" name="amount" placeholder="0.00" required>
+                                <label class="form-label-friendly">Amount (₹) *</label>
+                                <input type="number" step="0.01" min="0.01" class="form-input-friendly font-mono" name="amount" placeholder="0.00" required autofocus>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" name="txn_date" value="{{ today_date if today_date else '' }}" required>
+                                <label class="form-label-friendly">Date *</label>
+                                <input type="date" class="form-input-friendly font-mono" name="txn_date" value="{{ today_date if today_date else '' }}" required>
                             </div>
                         </div>
 
                         <div class="row g-2 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Account <span class="text-danger">*</span></label>
-                                <select class="form-select" name="account_id" required>
+                                <label class="form-label-friendly">Account *</label>
+                                <select class="form-input-friendly" name="account_id" required>
                                     {% if accounts %}
                                         {% for acc in accounts %}
                                             <option value="{{ acc.account_id }}">{{ acc.account_name }} ({{ acc.account_type }})</option>
                                         {% endfor %}
                                     {% else %}
-                                        <option value="" disabled selected>No accounts found</option>
+                                        <option value="" disabled selected>No accounts available</option>
                                     {% endif %}
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
-                                <select class="form-select" name="category_id" required>
+                                <label class="form-label-friendly">Category *</label>
+                                <select class="form-input-friendly" name="category_id" required>
                                     {% if categories %}
                                         {% for cat in categories %}
                                             <option value="{{ cat.category_id }}">{{ cat.category_name }} ({{ cat.category_type }})</option>
                                         {% endfor %}
                                     {% else %}
-                                        <option value="" disabled selected>No categories found</option>
+                                        <option value="" disabled selected>No categories available</option>
                                     {% endif %}
                                 </select>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Description / Note</label>
-                            <input type="text" class="form-control" name="description" placeholder="e.g., Grocery shopping at DMart">
+                            <label class="form-label-friendly">Description / Note</label>
+                            <input type="text" class="form-input-friendly" name="description" placeholder="e.g., Grocery shopping, Salary deposit...">
+                        </div>
+
+                        <div class="p-2 rounded border bg-light small text-muted" style="background-color: var(--bg-subtle) !important; border-color: var(--border-color) !important;">
+                            <i class="bi bi-check-circle text-success me-1"></i> Account balance updates automatically via MySQL database triggers.
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-check2"></i> Record Transaction
-                        </button>
+                    <div class="modal-friendly-footer">
+                        <button type="button" class="btn-friendly" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn-friendly btn-friendly-primary">Save Transaction</button>
                     </div>
                 </form>
             </div>
@@ -215,16 +227,45 @@
     {% endif %}
 
     <!-- Footer -->
-    <footer class="py-3 text-center mt-auto">
-        <div class="container">
-            <span class="text-muted">
-                SpendSense &copy; 2026 &bull; College DBMS Semester Project &bull; Built with Flask + Raw MySQL
-            </span>
+    <footer>
+        <div class="container-fluid px-lg-4 text-center">
+            <span>SpendSense &bull; DBMS Project &bull; Built with Python, Flask & MySQL (Raw SQL, 3NF, Triggers & Views)</span>
         </div>
     </footer>
 
     <!-- Bootstrap 5 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Theme Toggle Logic -->
+    <script>
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || 'light';
+        const next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('spendsense-theme', next);
+        updateThemeIcon(next);
+        if (window.renderCharts) {
+            window.renderCharts();
+        }
+    }
+
+    function updateThemeIcon(theme) {
+        const icon = document.getElementById('themeIcon');
+        if (icon) {
+            if (theme === 'dark') {
+                icon.className = 'bi bi-sun-fill text-warning';
+            } else {
+                icon.className = 'bi bi-moon-stars text-secondary';
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const theme = document.documentElement.getAttribute('data-theme') || 'light';
+        updateThemeIcon(theme);
+    });
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>
