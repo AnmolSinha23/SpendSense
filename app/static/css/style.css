@@ -13,15 +13,15 @@
 [data-bs-theme="light"] {
     color-scheme: light;
 
-    /* Base Surfaces */
-    --bg-body: #f8fafc;          /* Slate 50: Glare-free, gentle canvas */
-    --bg-card: #ffffff;          /* Pure White: Crisp, elevated card surface */
-    --bg-card-hover: #f8fafc;    /* Soft hover state */
-    --bg-subtle: #f1f5f9;        /* Slate 100: Distinct secondary surface */
-    --bg-table-zebra: #f8fafc;   /* Subtle alternating row tint */
-    --bg-header: #ffffff;        /* Clean top navigation header */
+    /* Base Surfaces: Soothing Off-White / Soft Grayish Canvas */
+    --bg-body: #edf1f7;          /* Soothing off-white grayish canvas: eliminates harsh glare and eye strain */
+    --bg-card: #ffffff;          /* Pure crisp white: cards float cleanly with pleasant separation */
+    --bg-card-hover: #f8fafc;    /* Soft card hover */
+    --bg-subtle: #e4e9f2;        /* Soft grayish-blue tinted inset for nested metric boxes and table headers */
+    --bg-table-zebra: #f6f8fb;   /* Pleasant alternating row tint */
+    --bg-header: #ffffff;        /* Crisp top navigation header */
 
-    /* Structural Boundaries (Sharp 1px division, not blurry) */
+    /* Structural Boundaries (Sharp 1.5px division, crisp separation) */
     --border-color: #cbd5e1;     /* Slate 300: High-definition border */
     --border-hover: #94a3b8;     /* Slate 400: Active boundary on hover */
 
