@@ -76,10 +76,11 @@
                         <i class="bi bi-moon-stars" id="themeIcon"></i>
                     </button>
 
-                    <!-- Add Transaction Button -->
-                    <button type="button" class="btn-friendly btn-friendly-primary" data-bs-toggle="modal" data-bs-target="#quickAddTxnModal">
+                    <!-- Sticky Single Primary CTA: Add Transaction -->
+                    <button type="button" class="btn-friendly btn-friendly-primary" data-bs-toggle="modal" data-bs-target="#quickAddTxnModal" title="Shortcut: Press 'N'">
                         <i class="bi bi-plus-circle-fill"></i>
                         <span>Add Transaction</span>
+                        <kbd class="kbd-shortcut ms-1 d-none d-md-inline" style="background: rgba(255,255,255,0.22); color: #ffffff; border-color: rgba(255,255,255,0.4);">N</kbd>
                     </button>
 
                     <!-- User Account Dropdown -->
@@ -213,6 +214,20 @@
                             <input type="text" class="form-input-friendly" name="description" placeholder="e.g., Grocery shopping, Salary deposit...">
                         </div>
 
+                        <!-- One-Tap Receipt Capture (Drag-and-Drop / Smartphone Camera) -->
+                        <div class="mb-3">
+                            <label class="form-label-friendly">
+                                <i class="bi bi-camera-fill text-primary me-1"></i> Attach Receipt / Bill (One-Tap Capture)
+                            </label>
+                            <div class="receipt-dropzone" id="receiptDropzone" onclick="document.getElementById('receiptFileInput').click()">
+                                <i class="bi bi-cloud-arrow-up receipt-dropzone-icon d-block"></i>
+                                <div class="fw-bold text-main" style="font-size: 0.95rem;">Tap to snap photo or drag & drop receipt</div>
+                                <div class="text-secondary small mt-1">Camera capture on mobile • PNG, JPG, WebP</div>
+                                <input type="file" id="receiptFileInput" name="receipt_file" accept="image/*" capture="environment" style="display: none;" onchange="handleReceiptPreview(this)">
+                                <img id="receiptPreviewImg" class="receipt-preview-img" alt="Receipt preview">
+                            </div>
+                        </div>
+
                         <div class="p-2 rounded border bg-light small text-muted" style="background-color: var(--bg-subtle) !important; border-color: var(--border-color) !important;">
                             <i class="bi bi-check-circle text-success me-1"></i> Account balance updates automatically via MySQL database triggers.
                         </div>
@@ -260,6 +275,49 @@
                 icon.className = 'bi bi-moon-stars-fill text-primary theme-icon';
             }
         });
+    }
+
+    // Keyboard Shortcuts: 'N' for New Entry, '/' for Search
+    document.addEventListener('keydown', function(e) {
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        const isInputActive = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+
+        if (isInputActive) {
+            return;
+        }
+
+        if (e.key === 'n' || e.key === 'N') {
+            e.preventDefault();
+            const modalEl = document.getElementById('quickAddTxnModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        } else if (e.key === '/') {
+            e.preventDefault();
+            const searchInput = document.querySelector('input[name="search"]');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            } else {
+                window.location.href = "{{ url_for('transactions.list_transactions') }}";
+            }
+        }
+    });
+
+    // One-Tap Receipt Upload Preview Handler
+    function handleReceiptPreview(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('receiptPreviewImg');
+                if (img) {
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {

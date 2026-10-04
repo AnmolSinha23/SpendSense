@@ -21,9 +21,19 @@ def create_app():
     def currency_filter(value):
         try:
             val = float(value or 0)
+            if val < 0:
+                return f"-₹{abs(val):,.2f}"
             return f"₹{val:,.2f}"
         except (ValueError, TypeError):
-            return f"₹0.00"
+            return "₹0.00"
+
+    @app.template_filter('abs_currency')
+    def abs_currency_filter(value):
+        try:
+            val = abs(float(value or 0))
+            return f"₹{val:,.2f}"
+        except (ValueError, TypeError):
+            return "₹0.00"
 
     @app.template_filter('format_date')
     def format_date_filter(value):

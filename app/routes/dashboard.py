@@ -5,7 +5,7 @@ and budget warning alerts using raw SQL queries and database views.
 """
 
 from datetime import datetime
-from flask import Blueprint, render_template, session, redirect, url_for
+from flask import Blueprint, render_template, session, redirect, url_for, request
 from app.db import query_db
 from app.routes.auth import login_required
 
@@ -17,23 +17,38 @@ dashboard_bp = Blueprint('dashboard', __name__)
 def index():
     """
     Renders the central financial dashboard.
-    Retrieves real-time totals, account balances, recent transactions,
-    and budget status indicators.
+    Retrieves real-time totals, segregated assets & liabilities,
+    recent transaction feed, interactive month stepper, and budget progress.
     """
     user_id = session['user_id']
     now = datetime.now()
-    current_month = now.month
-    current_year = now.year
 
-    # 1. Total Net Worth across all accounts
-    net_worth_res = query_db(
-        "SELECT COALESCE(SUM(balance), 0.00) AS total_balance FROM accounts WHERE user_id = %s",
-        (user_id,),
-        one=True
-    )
-    total_balance = net_worth_res['total_balance'] if net_worth_res else 0.00
+    # 1. Month Stepper Parameter Handling
+    month_arg = request.args.get('month', type=int)
+    year_arg = request.args.get('year', type=int)
 
-    # 2. Current Month's Income
+    if month_arg and 1 <= month_arg <= 12 and year_arg and 2000 <= year_arg <= 2100:
+        selected_month = month_arg
+        selected_year = year_arg
+    else:
+        selected_month = now.month
+        selected_year = now.year
+
+    # Previous and Next Month calculations
+    if selected_month == 1:
+        prev_month, prev_year = 12, selected_year - 1
+    else:
+        prev_month, prev_year = selected_month - 1, selected_year
+
+    if selected_month == 12:
+        next_month, next_year = 1, selected_year + 1
+    else:
+        next_month, next_year = selected_month + 1, selected_year
+
+    selected_date = datetime(selected_year, selected_month, 1)
+    selected_month_name = selected_date.strftime("%B")
+
+    # 2. Selected Month's Income
     income_res = query_db(
         """
         SELECT COALESCE(SUM(amount), 0.00) AS total_income
@@ -41,12 +56,12 @@ def index():
         WHERE user_id = %s AND txn_type = 'income'
           AND MONTH(txn_date) = %s AND YEAR(txn_date) = %s
         """,
-        (user_id, current_month, current_year),
+        (user_id, selected_month, selected_year),
         one=True
     )
-    monthly_income = income_res['total_income'] if income_res else 0.00
+    monthly_income = float(income_res['total_income'] if income_res else 0.0)
 
-    # 3. Current Month's Expenses
+    # 3. Selected Month's Expenses
     expense_res = query_db(
         """
         SELECT COALESCE(SUM(amount), 0.00) AS total_expense
@@ -54,21 +69,42 @@ def index():
         WHERE user_id = %s AND txn_type = 'expense'
           AND MONTH(txn_date) = %s AND YEAR(txn_date) = %s
         """,
-        (user_id, current_month, current_year),
+        (user_id, selected_month, selected_year),
         one=True
     )
-    monthly_expense = expense_res['total_expense'] if expense_res else 0.00
+    monthly_expense = float(expense_res['total_expense'] if expense_res else 0.0)
 
-    # 4. Net Monthly Savings
-    monthly_savings = monthly_income - monthly_expense
+    # 4. Net Monthly Cashflow (Savings / Deficit)
+    monthly_cashflow = monthly_income - monthly_expense
 
-    # 5. User Financial Accounts with live balances
+    # 5. Accounts: Segregate Liquid Assets from Credit Liabilities
     accounts = query_db(
         "SELECT * FROM accounts WHERE user_id = %s ORDER BY balance DESC",
         (user_id,)
     )
 
-    # 6. Recent 6 Transactions (JOINed with accounts & categories)
+    liquid_accounts = []
+    liability_accounts = []
+    total_liquid_cash = 0.0
+    total_liabilities = 0.0
+
+    for acc in accounts:
+        bal = float(acc['balance'] or 0.0)
+        acc_type = str(acc['account_type'] or '').strip()
+
+        if acc_type in ('Credit Card', 'Loan') or bal < 0:
+            due = abs(bal) if bal < 0 else 0.0
+            acc_data = dict(acc)
+            acc_data['outstanding_due'] = due
+            liability_accounts.append(acc_data)
+            total_liabilities += due
+        else:
+            liquid_accounts.append(acc)
+            total_liquid_cash += bal
+
+    total_net_worth = total_liquid_cash - total_liabilities
+
+    # 6. Recent Transactions (JOINed with accounts & categories)
     recent_transactions = query_db(
         """
         SELECT
@@ -85,13 +121,13 @@ def index():
         INNER JOIN categories c ON t.category_id = c.category_id
         WHERE t.user_id = %s
         ORDER BY t.txn_date DESC, t.transaction_id DESC
-        LIMIT 6
+        LIMIT 8
         """,
         (user_id,)
     )
 
-    # 7. Budget Alerts for current month (Querying the Database View)
-    budget_alerts = query_db(
+    # 7. Budgets for Selected Month (All configured budgets for progress meters)
+    all_budgets = query_db(
         """
         SELECT
             category_name,
@@ -102,11 +138,13 @@ def index():
             percentage_used,
             budget_status
         FROM view_monthly_budget_status
-        WHERE user_id = %s AND month = %s AND year = %s AND budget_status IN ('WARNING', 'EXCEEDED')
+        WHERE user_id = %s AND month = %s AND year = %s
         ORDER BY percentage_used DESC
         """,
-        (user_id, current_month, current_year)
+        (user_id, selected_month, selected_year)
     )
+
+    budget_alerts = [b for b in all_budgets if b['budget_status'] in ('WARNING', 'EXCEEDED')]
 
     # 8. Available categories for quick transaction modal
     categories = query_db(
@@ -121,15 +159,26 @@ def index():
 
     return render_template(
         'dashboard.html',
-        total_balance=total_balance,
+        selected_month=selected_month,
+        selected_year=selected_year,
+        selected_month_name=selected_month_name,
+        prev_month=prev_month,
+        prev_year=prev_year,
+        next_month=next_month,
+        next_year=next_year,
         monthly_income=monthly_income,
         monthly_expense=monthly_expense,
-        monthly_savings=monthly_savings,
-        accounts=accounts,
+        monthly_cashflow=monthly_cashflow,
+        total_net_worth=total_net_worth,
+        total_liquid_cash=total_liquid_cash,
+        total_liabilities=total_liabilities,
+        liquid_accounts=liquid_accounts,
+        liability_accounts=liability_accounts,
         recent_transactions=recent_transactions,
+        all_budgets=all_budgets,
         budget_alerts=budget_alerts,
+        accounts=accounts,
         categories=categories,
-        current_month_name=now.strftime("%B"),
-        current_year=current_year,
-        today_date=now.strftime("%Y-%m-%d")
+        today_date=now.strftime("%Y-%m-%d"),
+        is_current_month=(selected_month == now.month and selected_year == now.year)
     )

@@ -36,21 +36,21 @@
     <div class="col-sm-6 col-xl-3">
         <div class="metric-summary-card">
             <div class="metric-title-small">Total Budget Allocated</div>
-            <div class="metric-big-number">{{ total_budgeted | currency }}</div>
+            <div class="metric-big-number font-mono tabular-num">{{ total_budgeted | currency }}</div>
             <div class="metric-helper-text">{{ budgets | length }} Categories Configured</div>
         </div>
     </div>
     <div class="col-sm-6 col-xl-3">
         <div class="metric-summary-card">
             <div class="metric-title-small">Total Spent So Far</div>
-            <div class="metric-big-number text-expense">{{ total_spent | currency }}</div>
+            <div class="metric-big-number font-mono tabular-num {% if total_spent > 0 %}text-expense{% else %}text-zero{% endif %}">{{ total_spent | currency }}</div>
             <div class="metric-helper-text">Across budgeted categories</div>
         </div>
     </div>
     <div class="col-sm-6 col-xl-3">
         <div class="metric-summary-card">
             <div class="metric-title-small">Remaining Budget</div>
-            <div class="metric-big-number {% if (total_budgeted - total_spent) >= 0 %}text-income{% else %}text-expense{% endif %}">
+            <div class="metric-big-number font-mono tabular-num {% if (total_budgeted - total_spent) > 0 %}text-income{% elif (total_budgeted - total_spent) < 0 %}text-expense{% else %}text-zero{% endif %}">
                 {{ (total_budgeted - total_spent) | currency }}
             </div>
             <div class="metric-helper-text">Available spending buffer</div>

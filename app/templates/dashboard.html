@@ -3,264 +3,315 @@
 {% block title %}Dashboard — SpendSense{% endblock %}
 
 {% block content %}
-<!-- Page Header -->
+<!-- Page Header with Interactive Month Stepper (Duplicate Add Button Eliminated) -->
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
         <h3 class="fw-bold mb-1" style="color: var(--text-main);">Financial Overview</h3>
-        <p class="text-muted mb-0">Summary for <strong>{{ current_month_name }} {{ current_year }}</strong></p>
+        <p class="text-secondary mb-0">Personal expenditure ledger &amp; cashflow tracking</p>
     </div>
+
+    <!-- Interactive Month Stepper (< Month Year >) -->
     <div class="d-flex align-items-center gap-2">
-        <button class="btn-friendly btn-friendly-primary" data-bs-toggle="modal" data-bs-target="#quickAddTxnModal">
-            <i class="bi bi-plus-circle-fill"></i>
-            <span>Add Transaction</span>
-        </button>
-        <a href="{{ url_for('reports.index') }}" class="btn-friendly">
+        <div class="month-stepper-container">
+            <a href="{{ url_for('dashboard.index', month=prev_month, year=prev_year) }}" class="btn-stepper" title="Previous Month: {{ prev_month }}/{{ prev_year }}" aria-label="Previous Month">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            <div class="stepper-month-label">
+                <i class="bi bi-calendar3 text-primary"></i>
+                <span>{{ selected_month_name }} {{ selected_year }}</span>
+            </div>
+            <a href="{{ url_for('dashboard.index', month=next_month, year=next_year) }}" class="btn-stepper" title="Next Month: {{ next_month }}/{{ next_year }}" aria-label="Next Month">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+
+        <a href="{{ url_for('reports.index', month=selected_month, year=selected_year) }}" class="btn-friendly" title="View Full Month Reports">
             <i class="bi bi-bar-chart-fill text-primary"></i>
-            <span>View Reports</span>
+            <span class="d-none d-sm-inline">Reports</span>
         </a>
     </div>
 </div>
 
-<!-- 4 Key Summary Cards (Readable, Clear, High-Contrast) -->
+<!-- Restructured Glanceable Metrics: Hero Net Cashflow + Secondary Totals -->
 <div class="row g-3 mb-4">
-    <!-- Total Net Worth -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-summary-card">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="metric-title-small">Total Balance</div>
-                    <div class="metric-big-number">{{ total_balance | currency }}</div>
-                    <div class="metric-helper-text">Across {{ accounts | length }} account(s)</div>
+    <!-- Primary Net Monthly Cashflow Hero Card (Dominant Visual Anchor) -->
+    <div class="col-lg-5 col-md-12">
+        <div class="cashflow-hero-card h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="metric-title-small text-secondary">Net Monthly Cashflow</span>
+                    {% if monthly_cashflow > 0 %}
+                        <span class="badge-friendly badge-income-friendly">
+                            <i class="bi bi-graph-up-arrow"></i> Net Surplus
+                        </span>
+                    {% elif monthly_cashflow < 0 %}
+                        <span class="badge-friendly badge-expense-friendly">
+                            <i class="bi bi-graph-down-arrow"></i> Net Outflow
+                        </span>
+                    {% else %}
+                        <span class="badge-friendly badge-account-friendly">
+                            <i class="bi bi-dash-circle"></i> Balanced
+                        </span>
+                    {% endif %}
                 </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center p-3" style="background-color: var(--primary-subtle); color: var(--primary); width: 48px; height: 48px;">
-                    <i class="bi bi-wallet2 fs-4"></i>
+
+                <div class="cashflow-hero-number my-2 font-mono tabular-num {% if monthly_cashflow > 0 %}text-income{% elif monthly_cashflow < 0 %}text-expense{% else %}text-zero{% endif %}">
+                    {% if monthly_cashflow > 0 %}+{{ monthly_cashflow | currency }}{% elif monthly_cashflow < 0 %}-{{ (monthly_cashflow | abs) | currency }}{% else %}₹0.00{% endif %}
                 </div>
+            </div>
+
+            <div class="pt-2 border-top" style="border-color: var(--border-color) !important;">
+                <p class="text-secondary small mb-0">
+                    {% if monthly_cashflow > 0 %}
+                        <i class="bi bi-check-circle-fill text-success me-1"></i> Excellent! You earned more than you spent in {{ selected_month_name }}.
+                    {% elif monthly_cashflow < 0 %}
+                        <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> Spending exceeded income for {{ selected_month_name }}. Check category limits.
+                    {% else %}
+                        <i class="bi bi-info-circle-fill text-secondary me-1"></i> Income and expenses are currently in perfect balance.
+                    {% endif %}
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- Monthly Income -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-summary-card">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="metric-title-small">Income This Month</div>
-                    <div class="metric-big-number text-income">{{ monthly_income | currency }}</div>
-                    <div class="metric-helper-text">Total money earned in {{ current_month_name }}</div>
-                </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center p-3" style="background-color: var(--income-bg); color: var(--income-green); width: 48px; height: 48px;">
-                    <i class="bi bi-arrow-down-left fs-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Monthly Expenses -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-summary-card">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="metric-title-small">Spending This Month</div>
-                    <div class="metric-big-number text-expense">{{ monthly_expense | currency }}</div>
-                    <div class="metric-helper-text">Total money spent in {{ current_month_name }}</div>
-                </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center p-3" style="background-color: var(--expense-bg); color: var(--expense-red); width: 48px; height: 48px;">
-                    <i class="bi bi-arrow-up-right fs-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Monthly Net Savings -->
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-summary-card">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="metric-title-small">Net Savings</div>
-                    <div class="metric-big-number {% if monthly_savings >= 0 %}text-income{% else %}text-expense{% endif %}">
-                        {{ monthly_savings | currency }}
+    <!-- Secondary Context Cards: Income, Spending (Neutral zero-state), Liquid Reserve -->
+    <div class="col-lg-7 col-md-12">
+        <div class="row g-3 h-100">
+            <!-- Monthly Income -->
+            <div class="col-sm-4">
+                <div class="metric-summary-card">
+                    <div class="metric-title-small">Total Inflow</div>
+                    <div class="metric-big-number font-mono tabular-num {% if monthly_income > 0 %}text-income{% else %}text-zero{% endif %}">
+                        {% if monthly_income > 0 %}+{{ monthly_income | currency }}{% else %}₹0.00{% endif %}
                     </div>
-                    <div class="metric-helper-text">Income minus expenses</div>
+                    <div class="metric-helper-text">Earnings &amp; credits</div>
                 </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center p-3" style="background-color: {% if monthly_savings >= 0 %}var(--income-bg){% else %}var(--expense-bg){% endif %}; color: {% if monthly_savings >= 0 %}var(--income-green){% else %}var(--expense-red){% endif %}; width: 48px; height: 48px;">
-                    <i class="bi bi-piggy-bank fs-4"></i>
+            </div>
+
+            <!-- Monthly Expenses (Neutral slate on zero: cuts false financial anxiety) -->
+            <div class="col-sm-4">
+                <div class="metric-summary-card">
+                    <div class="metric-title-small">Total Outflow</div>
+                    <div class="metric-big-number font-mono tabular-num {% if monthly_expense > 0 %}text-expense{% else %}text-zero{% endif %}">
+                        {% if monthly_expense > 0 %}-{{ monthly_expense | currency }}{% else %}₹0.00{% endif %}
+                    </div>
+                    <div class="metric-helper-text">Debits &amp; purchases</div>
+                </div>
+            </div>
+
+            <!-- Total Liquid Cash Available -->
+            <div class="col-sm-4">
+                <div class="metric-summary-card">
+                    <div class="metric-title-small">Liquid Reserves</div>
+                    <div class="metric-big-number font-mono tabular-num text-main">
+                        {{ total_liquid_cash | currency }}
+                    </div>
+                    <div class="metric-helper-text">In bank &amp; cash accounts</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Budget Warnings Section (if any category is close to or over budget) -->
-{% if budget_alerts %}
-<div class="friendly-card mb-4 border-start border-4 border-warning">
-    <div class="friendly-card-header">
-        <h5 class="friendly-card-title text-warning">
-            <i class="bi bi-exclamation-triangle-fill"></i> Budget Notice: {{ budget_alerts | length }} Category Warning(s)
-        </h5>
-        <a href="{{ url_for('budgets.list_budgets') }}" class="btn-friendly btn-friendly-sm">
-            View All Budgets &rarr;
-        </a>
-    </div>
-    <div class="p-3">
-        <div class="row g-2">
-            {% for alert in budget_alerts %}
-            <div class="col-md-6 col-lg-4">
-                <div class="p-3 rounded border" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important;">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="fw-bold"><i class="bi {{ alert.category_icon }} me-1"></i>{{ alert.category_name }}</span>
-                        {% if alert.budget_status == 'EXCEEDED' %}
-                            <span class="badge-friendly badge-expense-friendly">Over Budget ({{ alert.percentage_used }}%)</span>
-                        {% else %}
-                            <span class="badge-friendly badge-warning-friendly">Near Limit ({{ alert.percentage_used }}%)</span>
-                        {% endif %}
-                    </div>
-                    <div class="progress-friendly my-2">
-                        <div class="progress-friendly-fill" style="width: {{ [alert.percentage_used, 100] | min }}%; background-color: {% if alert.budget_status == 'EXCEEDED' %}var(--expense-red){% else %}var(--warning-amber){% endif %};"></div>
-                    </div>
-                    <div class="d-flex justify-content-between font-mono small text-muted">
-                        <span>Spent: <strong>{{ alert.actual_spent | currency }}</strong></span>
-                        <span>Limit: <strong>{{ alert.budget_amount | currency }}</strong></span>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Main 2-Column Content: Recent Transactions + Accounts -->
-<div class="row g-3">
-    <!-- Left Column: Recent Transactions Table -->
+<!-- 65% / 35% Scanning Architecture -->
+<div class="row g-4">
+    <!-- LEFT COLUMN (65%): Clean, Non-Truncated Two-Line Transaction Feed -->
     <div class="col-lg-8">
-        <div class="friendly-card h-100">
+        <div class="ledger-card">
             <div class="friendly-card-header">
-                <h5 class="friendly-card-title">
-                    <i class="bi bi-clock-history text-primary"></i> Recent Transactions
-                </h5>
+                <div>
+                    <h5 class="friendly-card-title">
+                        <i class="bi bi-receipt-cutoff text-primary"></i> Recent Transactions
+                    </h5>
+                    <span class="text-secondary small">Latest recorded activity with full descriptions</span>
+                </div>
                 <a href="{{ url_for('transactions.list_transactions') }}" class="btn-friendly btn-friendly-sm">
-                    View All
+                    <span>Full Ledger</span>
+                    <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
+
             <div class="p-0">
                 {% if recent_transactions %}
-                <div class="table-responsive">
-                    <table class="table-friendly">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Category</th>
-                                <th>Description</th>
-                                <th>Account</th>
-                                <th class="text-end">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for txn in recent_transactions %}
-                            <tr>
-                                <td class="font-mono text-secondary small fw-medium" style="white-space: nowrap;">
-                                    {{ txn.txn_date | format_date }}
-                                </td>
-                                <td>
-                                    <span class="badge-friendly {% if txn.txn_type == 'income' %}badge-income-friendly{% else %}badge-expense-friendly{% endif %}">
-                                        <i class="bi {{ txn.category_icon or 'bi-tag' }}"></i>
-                                        <span>{{ txn.category_name }}</span>
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="fw-medium text-main text-truncate d-inline-block" style="max-width: 220px;">
-                                        {{ txn.description or 'No note' }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge-friendly badge-account-friendly">
-                                        {{ txn.account_name }}
-                                    </span>
-                                </td>
-                                <td class="text-end font-mono fw-bold">
-                                    <span class="{% if txn.txn_type == 'income' %}text-income{% else %}text-expense{% endif %}">
-                                        {% if txn.txn_type == 'income' %}+{% else %}-{% endif %}{{ txn.amount | currency }}
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="empty-state-friendly">
-                    <i class="bi bi-receipt-cutoff empty-state-icon"></i>
-                    <h5 class="empty-state-title">No Transactions Yet</h5>
-                    <p class="empty-state-desc">You haven't recorded any income or expense transactions yet.</p>
-                    <button class="btn-friendly btn-friendly-primary" data-bs-toggle="modal" data-bs-target="#quickAddTxnModal">
-                        <i class="bi bi-plus-circle"></i> Add First Transaction
-                    </button>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Right Column: Accounts Overview -->
-    <div class="col-lg-4">
-        <div class="friendly-card mb-3">
-            <div class="friendly-card-header">
-                <h5 class="friendly-card-title">
-                    <i class="bi bi-bank2 text-primary"></i> Your Accounts
-                </h5>
-                <a href="{{ url_for('accounts.list_accounts') }}" class="btn-friendly btn-friendly-sm">
-                    Manage
-                </a>
-            </div>
-            <div class="p-3">
-                {% if accounts %}
-                <div class="d-flex flex-column gap-2">
-                    {% for acc in accounts %}
-                    <div class="p-3 rounded border d-flex align-items-center justify-content-between" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important;">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded d-flex align-items-center justify-content-center p-2" style="background-color: var(--bg-card); color: var(--primary); width: 38px; height: 38px;">
-                                {% if acc.account_type == 'Cash' %}
-                                    <i class="bi bi-cash-stack fs-5"></i>
-                                {% elif acc.account_type == 'Credit Card' %}
-                                    <i class="bi bi-credit-card-2-front fs-5"></i>
-                                {% elif acc.account_type == 'UPI' %}
-                                    <i class="bi bi-qr-code fs-5"></i>
-                                {% else %}
-                                    <i class="bi bi-bank fs-5"></i>
-                                {% endif %}
+                <div class="d-flex flex-column">
+                    {% for txn in recent_transactions %}
+                    <div class="ledger-item">
+                        <!-- Category Icon (Clean visual anchor, no clutter) -->
+                        <div class="d-flex align-items-center gap-3 flex-grow-1" style="min-width: 0;">
+                            <div class="ledger-icon-box {% if txn.txn_type == 'income' %}badge-income-friendly{% else %}badge-account-friendly{% endif %}">
+                                <i class="bi {{ txn.category_icon or 'bi-tag' }}"></i>
                             </div>
-                            <div>
-                                <div class="fw-bold" style="color: var(--text-main);">{{ acc.account_name }}</div>
-                                <span class="badge-friendly badge-account-friendly py-0 px-2" style="font-size: 0.72rem;">{{ acc.account_type }}</span>
+
+                            <!-- Flexible Two-Line Header with ZERO Truncation for Senior Legibility -->
+                            <div style="min-width: 0; flex: 1;">
+                                <div class="ledger-title">
+                                    {{ txn.description or txn.category_name }}
+                                </div>
+                                <div class="ledger-meta">
+                                    <span><i class="bi bi-calendar-event me-1"></i>{{ txn.txn_date | format_date }}</span>
+                                    <span>&bull;</span>
+                                    <span><i class="bi bi-wallet2 me-1"></i>{{ txn.account_name }}</span>
+                                    <span>&bull;</span>
+                                    <span class="badge-friendly {% if txn.txn_type == 'income' %}badge-income-friendly{% else %}badge-expense-friendly{% endif %} py-0 px-2" style="font-size: 0.75rem;">
+                                        {{ txn.category_name }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                        <div class="text-end">
-                            <div class="font-mono fw-bold fs-6 {% if acc.balance >= 0 %}text-main{% else %}text-expense{% endif %}">
-                                {{ acc.balance | currency }}
-                            </div>
-                            <span class="small text-secondary font-mono" style="font-size: 0.72rem;">Live balance</span>
+
+                        <!-- Tabular Standardized Number (-₹X.XX or +₹X.XX) -->
+                        <div class="ledger-amount font-mono tabular-num {% if txn.txn_type == 'income' %}text-income{% else %}text-expense{% endif %} ms-3">
+                            {% if txn.txn_type == 'income' %}+{% else %}-{% endif %}{{ txn.amount | currency }}
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="text-center py-4 text-muted">
-                    <p class="mb-2">No accounts created.</p>
-                    <a href="{{ url_for('accounts.list_accounts') }}" class="btn-friendly btn-friendly-primary btn-friendly-sm">Add Account</a>
+                <div class="empty-state-friendly m-3">
+                    <i class="bi bi-inbox empty-state-icon"></i>
+                    <h5 class="empty-state-title">No Transactions Recorded</h5>
+                    <p class="empty-state-desc">You have no entries logged for {{ selected_month_name }} {{ selected_year }}. Use the sticky Add Transaction button or press 'N' on your keyboard.</p>
                 </div>
                 {% endif %}
             </div>
         </div>
+    </div>
 
-        <!-- DBMS Project Note (Helpful for Viva & Evaluators) -->
-        <div class="p-3 rounded border" style="background-color: var(--primary-subtle); border-color: rgba(37, 99, 235, 0.25) !important;">
-            <div class="d-flex align-items-center gap-2 fw-bold text-primary mb-1">
-                <i class="bi bi-info-circle-fill"></i>
-                <span>Database Automation</span>
+    <!-- RIGHT COLUMN (35%): Actionable Widgets (Assets vs Liabilities, Budget Meters, Reminders) -->
+    <div class="col-lg-4">
+        <div class="d-flex flex-column gap-3">
+            <!-- Widget 1: Segregated Assets & Liabilities (Prevents Negative Cash Confusion) -->
+            <div class="friendly-card">
+                <div class="friendly-card-header">
+                    <h5 class="friendly-card-title fs-6">
+                        <i class="bi bi-bank2 text-primary"></i> Accounts &amp; Balances
+                    </h5>
+                    <a href="{{ url_for('accounts.list_accounts') }}" class="btn-friendly btn-friendly-sm">Manage</a>
+                </div>
+                <div class="p-3">
+                    <!-- Section A: Liquid Cash & Bank Accounts -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small fw-bold text-secondary text-uppercase" style="letter-spacing: 0.04em;">
+                                <i class="bi bi-check2-circle text-success me-1"></i> Liquid Cash &amp; Bank
+                            </span>
+                            <span class="font-mono fw-bold text-main small">{{ total_liquid_cash | currency }}</span>
+                        </div>
+                        <div class="d-flex flex-column gap-2">
+                            {% for acc in liquid_accounts %}
+                            <div class="p-2 rounded border d-flex align-items-center justify-content-between" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: var(--bg-card); color: var(--primary);">
+                                        <i class="bi {% if acc.account_type == 'Cash' %}bi-cash-stack{% elif acc.account_type == 'UPI' %}bi-qr-code{% else %}bi-bank{% endif %}"></i>
+                                    </div>
+                                    <span class="fw-semibold text-main small">{{ acc.account_name }}</span>
+                                </div>
+                                <span class="font-mono fw-bold text-main small tabular-num">{{ acc.balance | currency }}</span>
+                            </div>
+                            {% else %}
+                            <div class="small text-secondary text-center py-1">No bank accounts linked.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Section B: Credit Card Dues & Liabilities (Segregated cleanly, no confusing negative signs) -->
+                    {% if liability_accounts %}
+                    <div class="pt-2 border-top" style="border-color: var(--border-color) !important;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small fw-bold text-danger text-uppercase" style="letter-spacing: 0.04em;">
+                                <i class="bi bi-credit-card-2-front me-1"></i> Credit Card Liabilities
+                            </span>
+                            <span class="badge-friendly badge-expense-friendly py-0 px-2 small">Total Due: {{ total_liabilities | currency }}</span>
+                        </div>
+                        <div class="d-flex flex-column gap-2">
+                            {% for acc in liability_accounts %}
+                            <div class="p-2 rounded border d-flex align-items-center justify-content-between" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: var(--expense-bg); color: var(--expense-red);">
+                                        <i class="bi bi-credit-card-2-front"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-main small">{{ acc.account_name }}</div>
+                                        <div class="text-secondary" style="font-size: 0.74rem;">Unpaid credit balance</div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="font-mono fw-bold text-expense small tabular-num">
+                                        Due: {{ acc.outstanding_due | abs_currency }}
+                                    </div>
+                                    <span class="badge-friendly badge-expense-friendly py-0 px-1" style="font-size: 0.68rem;">Action Required</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            <p class="small text-muted mb-0" style="line-height: 1.5;">
-                Every transaction automatically updates your account balance directly in MySQL using <strong>database triggers</strong>, ensuring 100% data consistency.
-            </p>
+
+            <!-- Widget 2: Visual Budget Progress Rings / Meters -->
+            <div class="friendly-card">
+                <div class="friendly-card-header">
+                    <h5 class="friendly-card-title fs-6">
+                        <i class="bi bi-pie-chart-fill text-primary"></i> Budget Utilization
+                    </h5>
+                    <a href="{{ url_for('budgets.list_budgets', month=selected_month, year=selected_year) }}" class="btn-friendly btn-friendly-sm">Budgets</a>
+                </div>
+                <div class="p-3">
+                    {% if all_budgets %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for b in all_budgets[:4] %}
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="fw-bold text-main">
+                                    <i class="bi {{ b.category_icon or 'bi-tag' }} me-1 text-primary"></i>{{ b.category_name }}
+                                </span>
+                                <span class="font-mono tabular-num {% if b.budget_status == 'EXCEEDED' %}text-expense fw-bold{% elif b.budget_status == 'WARNING' %}text-warning fw-bold{% else %}text-secondary{% endif %}">
+                                    {{ b.percentage_used }}%
+                                </span>
+                            </div>
+                            <div class="progress-friendly">
+                                <div class="progress-friendly-fill" style="width: {{ [b.percentage_used, 100] | min }}%; background-color: {% if b.budget_status == 'EXCEEDED' %}var(--expense-red){% elif b.budget_status == 'WARNING' %}var(--warning-amber){% else %}var(--income-green){% endif %};"></div>
+                            </div>
+                            <div class="d-flex justify-content-between font-mono small text-secondary mt-1" style="font-size: 0.78rem;">
+                                <span>Spent: {{ b.actual_spent | currency }}</span>
+                                <span>Limit: {{ b.budget_amount | currency }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="small text-secondary text-center py-2">
+                        No category budgets configured for {{ selected_month_name }}.
+                        <div class="mt-2">
+                            <a href="{{ url_for('budgets.list_budgets') }}" class="btn-friendly btn-friendly-sm">Configure Budgets</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Widget 3: Upcoming Monthly Obligations & Reminders -->
+            <div class="friendly-card p-3" style="background-color: var(--primary-subtle); border-color: rgba(37, 99, 235, 0.25) !important;">
+                <div class="d-flex align-items-center gap-2 fw-bold text-primary mb-2">
+                    <i class="bi bi-bell-fill"></i>
+                    <span>Monthly Financial Checklist</span>
+                </div>
+                <ul class="list-unstyled small text-secondary mb-0 d-flex flex-column gap-2" style="line-height: 1.45;">
+                    <li class="d-flex align-items-center gap-2">
+                        <i class="bi bi-check2-circle text-primary"></i>
+                        <span>Reconcile bank accounts against latest statements.</span>
+                    </li>
+                    <li class="d-flex align-items-center gap-2">
+                        <i class="bi bi-check2-circle text-primary"></i>
+                        <span>Settle credit card dues before billing cycle close.</span>
+                    </li>
+                    <li class="d-flex align-items-center gap-2">
+                        <i class="bi bi-check2-circle text-primary"></i>
+                        <span>Review categories approaching the 80% budget limit.</span>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>

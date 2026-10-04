@@ -31,26 +31,30 @@
 </div>
 
 <!-- 3 Month Summary Cards -->
-<div class="row g-3 mb-4 font-mono">
+<div class="row g-3 mb-4 font-mono tabular-num">
     <div class="col-md-4">
         <div class="metric-summary-card">
             <div class="metric-title-small">Total Month's Income</div>
-            <div class="metric-big-number text-income">+{{ total_income | currency }}</div>
+            <div class="metric-big-number {% if total_income > 0 %}text-income{% else %}text-zero{% endif %}">
+                {% if total_income > 0 %}+{{ total_income | currency }}{% else %}₹0.00{% endif %}
+            </div>
             <div class="metric-helper-text">{{ category_incomes | length }} Income Category(s)</div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="metric-summary-card">
             <div class="metric-title-small">Total Month's Spending</div>
-            <div class="metric-big-number text-expense">-{{ total_expense | currency }}</div>
+            <div class="metric-big-number {% if total_expense > 0 %}text-expense{% else %}text-zero{% endif %}">
+                {% if total_expense > 0 %}-{{ total_expense | currency }}{% else %}₹0.00{% endif %}
+            </div>
             <div class="metric-helper-text">{{ category_expenses | length }} Expense Category(s)</div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="metric-summary-card">
             <div class="metric-title-small">Net Monthly Balance</div>
-            <div class="metric-big-number {% if (total_income - total_expense) >= 0 %}text-income{% else %}text-expense{% endif %}">
-                {{ (total_income - total_expense) | currency }}
+            <div class="metric-big-number {% if (total_income - total_expense) > 0 %}text-income{% elif (total_income - total_expense) < 0 %}text-expense{% else %}text-zero{% endif %}">
+                {% if (total_income - total_expense) > 0 %}+{{ (total_income - total_expense) | currency }}{% elif (total_income - total_expense) < 0 %}-{{ ((total_income - total_expense) | abs) | currency }}{% else %}₹0.00{% endif %}
             </div>
             <div class="metric-helper-text">Total income minus expenses</div>
         </div>

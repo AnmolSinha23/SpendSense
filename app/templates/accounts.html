@@ -17,99 +17,222 @@
     </div>
 </div>
 
-<!-- Consolidated Net Worth Card -->
-<div class="friendly-card p-4 mb-4 border-start border-4 border-primary">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-        <div>
+<!-- Consolidated Net Worth & Liquidity Overview -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="friendly-card p-4 border-start border-4 border-primary h-100">
             <div class="metric-title-small">Total Combined Net Worth</div>
-            <div class="metric-big-number fs-1 mb-1">{{ total_net_worth | currency }}</div>
-            <div class="text-muted small">Live balance calculated across {{ accounts | length }} linked account(s)</div>
+            <div class="cashflow-hero-number my-1 font-mono tabular-num text-main">{{ total_net_worth | currency }}</div>
+            <div class="text-secondary small mt-2">
+                <i class="bi bi-shield-check text-success me-1"></i> Live balance calculated across {{ accounts | length }} linked account(s) via database triggers.
+            </div>
         </div>
-        <span class="badge-friendly badge-income-friendly py-2 px-3 fs-6">
-            <i class="bi bi-lightning-charge-fill me-1"></i> Live Trigger Sync Active
-        </span>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-summary-card">
+            <div class="metric-title-small text-success">
+                <i class="bi bi-check-circle-fill me-1"></i> Liquid Cash Reserves
+            </div>
+            <div class="metric-big-number font-mono tabular-num text-income my-1">
+                {{ total_liquid_cash | currency }}
+            </div>
+            <div class="metric-helper-text">Immediate spendable cash &amp; bank</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-summary-card">
+            <div class="metric-title-small text-danger">
+                <i class="bi bi-credit-card-2-front me-1"></i> Credit Liabilities
+            </div>
+            <div class="metric-big-number font-mono tabular-num {% if total_liabilities > 0 %}text-expense{% else %}text-zero{% endif %} my-1">
+                {% if total_liabilities > 0 %}Due: {{ total_liabilities | abs_currency }}{% else %}₹0.00 Due{% endif %}
+            </div>
+            <div class="metric-helper-text">Unpaid credit card dues</div>
+        </div>
     </div>
 </div>
 
-<!-- Accounts Cards Grid -->
-<div class="row g-3 mb-4">
-    {% for acc in accounts %}
-    <div class="col-md-6 col-lg-4">
-        <div class="friendly-card p-3 h-100 position-relative">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center p-2" style="background-color: var(--primary-subtle); color: var(--primary); width: 44px; height: 44px;">
-                        {% if acc.account_type == 'Cash' %}
-                            <i class="bi bi-cash-stack fs-4"></i>
-                        {% elif acc.account_type == 'Credit Card' %}
+<!-- SECTION 1: Liquid Cash & Bank Accounts -->
+<div class="mb-5">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <div class="rounded p-2 d-flex align-items-center justify-content-center" style="background-color: var(--income-bg); color: var(--income-green); width: 36px; height: 36px;">
+                <i class="bi bi-bank fs-5"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-0" style="color: var(--text-main);">Liquid Cash &amp; Bank Accounts</h5>
+                <span class="text-secondary small">Checking, savings, cash wallets, and UPI handles</span>
+            </div>
+        </div>
+        <span class="badge-friendly badge-income-friendly font-mono">
+            {{ liquid_accounts | length }} Account(s) &bull; {{ total_liquid_cash | currency }}
+        </span>
+    </div>
+
+    <div class="row g-3">
+        {% for acc in liquid_accounts %}
+        <div class="col-md-6 col-lg-4">
+            <div class="friendly-card p-3 h-100 position-relative">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center p-2" style="background-color: var(--primary-subtle); color: var(--primary); width: 44px; height: 44px;">
+                            {% if acc.account_type == 'Cash' %}
+                                <i class="bi bi-cash-stack fs-4"></i>
+                            {% elif acc.account_type == 'UPI' %}
+                                <i class="bi bi-qr-code fs-4"></i>
+                            {% else %}
+                                <i class="bi bi-bank fs-4"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color: var(--text-main);">{{ acc.account_name }}</h6>
+                            <span class="badge-friendly badge-account-friendly py-0 px-2" style="font-size: 0.75rem;">{{ acc.account_type }}</span>
+                        </div>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="btn-friendly btn-friendly-sm p-1 border-0" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border p-2">
+                            <li>
+                                <button class="dropdown-item rounded py-1 small" onclick="openEditAccountModal('{{ acc.account_id }}', '{{ acc.account_name }}', '{{ acc.account_type }}')">
+                                    <i class="bi bi-pencil me-2 text-primary"></i> Edit Account
+                                </button>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <button class="dropdown-item rounded py-1 small text-danger" onclick="openDeleteAccountModal('{{ acc.account_id }}', '{{ acc.account_name }}')">
+                                    <i class="bi bi-trash me-2"></i> Delete Account
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="my-3 py-2 border-top border-bottom" style="border-color: var(--border-color) !important;">
+                    <div class="text-secondary small fw-semibold">Available Balance</div>
+                    <div class="font-mono fw-bold fs-3 text-main tabular-num">
+                        {{ acc.current_balance | currency }}
+                    </div>
+                </div>
+
+                <div class="row g-2 text-center small font-mono tabular-num pt-1">
+                    <div class="col-4">
+                        <span class="text-secondary fw-semibold d-block" style="font-size: 0.72rem;">TOTAL IN</span>
+                        <span class="text-income fw-bold">+{{ acc.total_inflow | currency }}</span>
+                    </div>
+                    <div class="col-4 border-start border-end" style="border-color: var(--border-color) !important;">
+                        <span class="text-secondary fw-semibold d-block" style="font-size: 0.72rem;">TOTAL OUT</span>
+                        <span class="text-expense fw-bold">-{{ acc.total_outflow | currency }}</span>
+                    </div>
+                    <div class="col-4">
+                        <span class="text-secondary fw-semibold d-block" style="font-size: 0.72rem;">ENTRIES</span>
+                        <span class="text-main fw-bold">{{ acc.total_transactions }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="empty-state-friendly">
+                <i class="bi bi-bank empty-state-icon"></i>
+                <h5 class="empty-state-title">No Liquid Accounts Configured</h5>
+                <p class="empty-state-desc">Add a bank or cash wallet account to start logging expenses.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- SECTION 2: Credit Card Dues & Liabilities (Clear Positive Due Figures, No Raw Negative Signs) -->
+<div class="mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <div class="rounded p-2 d-flex align-items-center justify-content-center" style="background-color: var(--expense-bg); color: var(--expense-red); width: 36px; height: 36px;">
+                <i class="bi bi-credit-card-2-front fs-5"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-0" style="color: var(--text-main);">Credit Card Dues &amp; Liabilities</h5>
+                <span class="text-secondary small">Revolving credit cards, personal loans, and pending dues</span>
+            </div>
+        </div>
+        <span class="badge-friendly badge-expense-friendly font-mono">
+            {{ liability_accounts | length }} Card(s) &bull; Due: {{ total_liabilities | currency }}
+        </span>
+    </div>
+
+    <div class="row g-3">
+        {% for acc in liability_accounts %}
+        <div class="col-md-6 col-lg-4">
+            <div class="friendly-card p-3 h-100 position-relative border-start border-4 border-danger">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center p-2" style="background-color: var(--expense-bg); color: var(--expense-red); width: 44px; height: 44px;">
                             <i class="bi bi-credit-card-2-front fs-4"></i>
-                        {% elif acc.account_type == 'UPI' %}
-                            <i class="bi bi-qr-code fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color: var(--text-main);">{{ acc.account_name }}</h6>
+                            <span class="badge-friendly badge-expense-friendly py-0 px-2" style="font-size: 0.75rem;">Credit Facility</span>
+                        </div>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="btn-friendly btn-friendly-sm p-1 border-0" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border p-2">
+                            <li>
+                                <button class="dropdown-item rounded py-1 small" onclick="openEditAccountModal('{{ acc.account_id }}', '{{ acc.account_name }}', '{{ acc.account_type }}')">
+                                    <i class="bi bi-pencil me-2 text-primary"></i> Edit Account
+                                </button>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <button class="dropdown-item rounded py-1 small text-danger" onclick="openDeleteAccountModal('{{ acc.account_id }}', '{{ acc.account_name }}')">
+                                    <i class="bi bi-trash me-2"></i> Delete Account
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="my-3 py-2 border-top border-bottom" style="border-color: var(--border-color) !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-secondary small fw-semibold">Outstanding Balance Due</span>
+                        {% if acc.outstanding_due > 0 %}
+                            <span class="badge-friendly badge-expense-friendly py-0 px-2 small">Action Required</span>
                         {% else %}
-                            <i class="bi bi-bank fs-4"></i>
+                            <span class="badge-friendly badge-income-friendly py-0 px-2 small">Settled / Clear</span>
                         {% endif %}
                     </div>
-                    <div>
-                        <h6 class="fw-bold mb-1" style="color: var(--text-main);">{{ acc.account_name }}</h6>
-                        <span class="badge-friendly badge-account-friendly py-0 px-2" style="font-size: 0.75rem;">{{ acc.account_type }}</span>
+                    <div class="font-mono fw-bold fs-3 text-expense tabular-num">
+                        Due: {{ acc.outstanding_due | abs_currency }}
                     </div>
                 </div>
 
-                <div class="dropdown">
-                    <button class="btn-friendly btn-friendly-sm p-1 border-0" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-three-dots-vertical"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border p-2" style="background-color: var(--bg-card); border-color: var(--border-color) !important;">
-                        <li>
-                            <button class="dropdown-item rounded py-1 small" onclick="openEditAccountModal('{{ acc.account_id }}', '{{ acc.account_name }}', '{{ acc.account_type }}')">
-                                <i class="bi bi-pencil me-2 text-primary"></i> Edit Account
-                            </button>
-                        </li>
-                        <li><hr class="dropdown-divider" style="border-color: var(--border-color);"></li>
-                        <li>
-                            <button class="dropdown-item rounded py-1 small text-danger" onclick="openDeleteAccountModal('{{ acc.account_id }}', '{{ acc.account_name }}')">
-                                <i class="bi bi-trash me-2"></i> Delete Account
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="my-3 py-2 border-top border-bottom" style="border-color: var(--border-color) !important;">
-                <div class="text-secondary small fw-semibold">Current Balance</div>
-                <div class="font-mono fw-bold fs-3 {% if acc.current_balance >= 0 %}text-main{% else %}text-expense{% endif %}">
-                    {{ acc.current_balance | currency }}
-                </div>
-            </div>
-
-            <div class="row g-2 text-center small font-mono pt-1">
-                <div class="col-4">
-                    <span class="text-secondary fw-semibold d-block" style="font-size: 0.72rem;">TOTAL IN</span>
-                    <span class="text-income fw-bold">+{{ acc.total_inflow | currency }}</span>
-                </div>
-                <div class="col-4 border-start border-end" style="border-color: var(--border-color) !important;">
-                    <span class="text-secondary fw-semibold d-block" style="font-size: 0.72rem;">TOTAL OUT</span>
-                    <span class="text-expense fw-bold">-{{ acc.total_outflow | currency }}</span>
-                </div>
-                <div class="col-4">
-                    <span class="text-secondary fw-semibold d-block" style="font-size: 0.72rem;">ENTRIES</span>
-                    <span class="text-main fw-bold">{{ acc.total_transactions }}</span>
+                <div class="row g-2 text-center small font-mono tabular-num pt-1">
+                    <div class="col-6">
+                        <span class="text-secondary fw-semibold d-block" style="font-size: 0.72rem;">CARD SPENDS</span>
+                        <span class="text-expense fw-bold">-{{ acc.total_outflow | currency }}</span>
+                    </div>
+                    <div class="col-6 border-start" style="border-color: var(--border-color) !important;">
+                        <span class="text-secondary fw-semibold d-block" style="font-size: 0.72rem;">REPAYMENTS</span>
+                        <span class="text-income fw-bold">+{{ acc.total_inflow | currency }}</span>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    {% else %}
-    <div class="col-12">
-        <div class="empty-state-friendly">
-            <i class="bi bi-bank empty-state-icon"></i>
-            <h5 class="empty-state-title">No Accounts Configured</h5>
-            <p class="empty-state-desc">You need at least one financial account (e.g. Bank Account or Cash Wallet) to track spending.</p>
-            <button class="btn-friendly btn-friendly-primary" data-bs-toggle="modal" data-bs-target="#addAccountModal">
-                <i class="bi bi-plus-circle"></i> Add First Account
-            </button>
+        {% else %}
+        <div class="col-12">
+            <div class="p-3 rounded border text-center" style="background-color: var(--bg-card); border-color: var(--border-color) !important;">
+                <span class="text-secondary small">
+                    <i class="bi bi-check-circle-fill text-success me-1"></i> No credit card liabilities or pending debt accounts recorded.
+                </span>
+            </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
 
 <!-- Modal: Add Account -->

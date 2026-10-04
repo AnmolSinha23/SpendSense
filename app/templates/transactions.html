@@ -3,37 +3,53 @@
 {% block title %}Transactions — SpendSense{% endblock %}
 
 {% block content %}
-<!-- Page Header -->
+<!-- Page Header (Duplicate Add Button Eliminated) -->
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-        <h3 class="fw-bold mb-1" style="color: var(--text-main);">Transaction History</h3>
-        <p class="text-muted mb-0">Browse, filter, and manage all your income and expense records (<strong>{{ transactions | length }}</strong> total)</p>
+        <h3 class="fw-bold mb-1" style="color: var(--text-main);">Transaction Ledger</h3>
+        <p class="text-secondary mb-0">Browse, filter, and manage all financial transactions (<strong>{{ transactions | length }}</strong> records)</p>
     </div>
     <div class="d-flex align-items-center gap-2">
-        <a href="{{ url_for('reports.export_csv') }}" class="btn-friendly">
+        <a href="{{ url_for('reports.export_csv') }}" class="btn-friendly" title="Export as Spreadsheet">
             <i class="bi bi-file-earmark-spreadsheet-fill text-success"></i>
             <span>Export CSV</span>
         </a>
-        <button class="btn-friendly btn-friendly-primary" data-bs-toggle="modal" data-bs-target="#addTxnModal">
-            <i class="bi bi-plus-circle-fill"></i>
-            <span>Add Transaction</span>
-        </button>
     </div>
 </div>
 
-<!-- Search and Filter Panel -->
+<!-- Search and Filter Panel with Quick Filter Tabs & Keyboard Hotkey -->
 <div class="friendly-card p-3 mb-4">
+    <!-- Quick Filter Tabs (All / Income / Expense) -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-3 border-bottom" style="border-color: var(--border-color) !important;">
+        <div class="quick-filter-group">
+            <a href="{{ url_for('transactions.list_transactions') }}" class="quick-filter-btn {% if not filters.txn_type %}active{% endif %}">
+                <i class="bi bi-grid-fill"></i> All Entries
+            </a>
+            <a href="{{ url_for('transactions.list_transactions', txn_type='income') }}" class="quick-filter-btn {% if filters.txn_type == 'income' %}active{% endif %}">
+                <i class="bi bi-arrow-down-left text-success"></i> Income Only
+            </a>
+            <a href="{{ url_for('transactions.list_transactions', txn_type='expense') }}" class="quick-filter-btn {% if filters.txn_type == 'expense' %}active{% endif %}">
+                <i class="bi bi-arrow-up-right text-danger"></i> Expenses Only
+            </a>
+        </div>
+
+        <div class="text-secondary small font-mono">
+            Press <kbd class="kbd-shortcut">/</kbd> to search &bull; <kbd class="kbd-shortcut">N</kbd> for new entry
+        </div>
+    </div>
+
     <form method="GET" action="{{ url_for('transactions.list_transactions') }}">
         <div class="row g-2 align-items-end">
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-4 col-sm-6">
                 <label class="form-label-friendly">Search by Keyword</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-input-friendly" name="search" placeholder="Search description..." value="{{ filters.search }}">
+                    <input type="text" class="form-input-friendly" name="search" placeholder="Search description... (press '/')" value="{{ filters.search }}">
+                    <span class="input-group-text d-none d-md-flex"><kbd class="kbd-shortcut">/</kbd></span>
                 </div>
             </div>
 
-            <div class="col-md-2 col-sm-6">
+            <div class="col-md-3 col-sm-6">
                 <label class="form-label-friendly">Category</label>
                 <select class="form-input-friendly" name="category_id">
                     <option value="">All Categories</option>
@@ -45,7 +61,7 @@
                 </select>
             </div>
 
-            <div class="col-md-2 col-sm-6">
+            <div class="col-md-3 col-sm-6">
                 <label class="form-label-friendly">Account</label>
                 <select class="form-input-friendly" name="account_id">
                     <option value="">All Accounts</option>
@@ -57,16 +73,7 @@
                 </select>
             </div>
 
-            <div class="col-md-2 col-sm-6">
-                <label class="form-label-friendly">Type</label>
-                <select class="form-input-friendly" name="txn_type">
-                    <option value="">Income & Expense</option>
-                    <option value="expense" {% if filters.txn_type == 'expense' %}selected{% endif %}>Expenses Only</option>
-                    <option value="income" {% if filters.txn_type == 'income' %}selected{% endif %}>Income Only</option>
-                </select>
-            </div>
-
-            <div class="col-md-3 col-sm-12 d-flex gap-2">
+            <div class="col-md-2 col-sm-6 d-flex gap-2">
                 <button type="submit" class="btn-friendly btn-friendly-primary w-50 justify-content-center">
                     <i class="bi bi-funnel-fill"></i> Filter
                 </button>
@@ -98,31 +105,35 @@
     </form>
 </div>
 
-<!-- Filter Summary Strip -->
-<div class="row g-2 mb-4 font-mono">
+<!-- Filter Summary Strip (Neutral slate on zero) -->
+<div class="row g-2 mb-4 font-mono tabular-num">
     <div class="col-md-4">
         <div class="p-3 rounded border friendly-card d-flex justify-content-between align-items-center">
             <span class="fw-semibold text-secondary small">Total Filtered Income</span>
-            <span class="text-income fw-bold fs-6">+{{ total_income | currency }}</span>
+            <span class="fw-bold fs-6 {% if total_income > 0 %}text-income{% else %}text-zero{% endif %}">
+                {% if total_income > 0 %}+{{ total_income | currency }}{% else %}₹0.00{% endif %}
+            </span>
         </div>
     </div>
     <div class="col-md-4">
         <div class="p-3 rounded border friendly-card d-flex justify-content-between align-items-center">
             <span class="fw-semibold text-secondary small">Total Filtered Expenses</span>
-            <span class="text-expense fw-bold fs-6">-{{ total_expense | currency }}</span>
+            <span class="fw-bold fs-6 {% if total_expense > 0 %}text-expense{% else %}text-zero{% endif %}">
+                {% if total_expense > 0 %}-{{ total_expense | currency }}{% else %}₹0.00{% endif %}
+            </span>
         </div>
     </div>
     <div class="col-md-4">
         <div class="p-3 rounded border friendly-card d-flex justify-content-between align-items-center">
             <span class="fw-semibold text-secondary small">Net Filtered Flow</span>
-            <span class="fw-bold fs-6 {% if net_flow >= 0 %}text-income{% else %}text-expense{% endif %}">
-                {{ net_flow | currency }}
+            <span class="fw-bold fs-6 {% if net_flow > 0 %}text-income{% elif net_flow < 0 %}text-expense{% else %}text-zero{% endif %}">
+                {% if net_flow > 0 %}+{{ net_flow | currency }}{% elif net_flow < 0 %}-{{ (net_flow | abs) | currency }}{% else %}₹0.00{% endif %}
             </span>
         </div>
     </div>
 </div>
 
-<!-- Transactions Table Card -->
+<!-- Transactions Ledger Card with Two-Line Format & 44px Hit Targets -->
 <div class="friendly-card">
     <div class="friendly-card-header">
         <h5 class="friendly-card-title">
@@ -136,58 +147,59 @@
             <table class="table-friendly">
                 <thead>
                     <tr>
-                        <th style="width: 120px;">Date</th>
-                        <th style="width: 200px;">Category</th>
-                        <th>Description / Note</th>
-                        <th style="width: 180px;">Account</th>
-                        <th style="width: 110px;">Type</th>
-                        <th class="text-end" style="width: 140px;">Amount</th>
-                        <th class="text-center" style="width: 90px;">Actions</th>
+                        <th>Transaction Details</th>
+                        <th class="d-none d-md-table-cell" style="width: 130px;">Type</th>
+                        <th class="text-end" style="width: 180px;">Amount</th>
+                        <th class="text-end" style="width: 190px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for txn in transactions %}
                     <tr>
-                        <td class="font-mono text-secondary small fw-medium" style="white-space: nowrap;">
-                            {{ txn.txn_date | format_date }}
-                        </td>
                         <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge-friendly badge-account-friendly p-1">
+                            <!-- Two-Line Ledger Entry (Zero Truncation, Senior Readable) -->
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="ledger-icon-box {% if txn.txn_type == 'income' %}badge-income-friendly{% else %}badge-account-friendly{% endif %}">
                                     <i class="bi {{ txn.category_icon or 'bi-tag' }}"></i>
-                                </span>
-                                <span class="fw-semibold text-main">{{ txn.category_name }}</span>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div class="fw-bold text-main" style="font-size: 1.02rem; word-break: break-word; line-height: 1.4;">
+                                        {{ txn.description or txn.category_name }}
+                                    </div>
+                                    <div class="text-secondary small mt-1 d-flex align-items-center gap-2 flex-wrap">
+                                        <span><i class="bi bi-calendar-event me-1"></i>{{ txn.txn_date | format_date }}</span>
+                                        <span>&bull;</span>
+                                        <span><i class="bi bi-wallet2 me-1"></i>{{ txn.account_name }}</span>
+                                        <span>&bull;</span>
+                                        <span class="badge-friendly badge-account-friendly py-0 px-2" style="font-size: 0.74rem;">{{ txn.category_name }}</span>
+                                    </div>
+                                </div>
                             </div>
                         </td>
-                        <td>
-                            <span class="text-main fw-medium">{{ txn.description or '-' }}</span>
-                        </td>
-                        <td>
-                            <span class="badge-friendly badge-account-friendly">
-                                {{ txn.account_name }}
-                            </span>
-                        </td>
-                        <td>
+                        <td class="d-none d-md-table-cell">
                             {% if txn.txn_type == 'income' %}
                                 <span class="badge-friendly badge-income-friendly">Income</span>
                             {% else %}
                                 <span class="badge-friendly badge-expense-friendly">Expense</span>
                             {% endif %}
                         </td>
-                        <td class="text-end font-mono fw-bold">
+                        <td class="text-end font-mono tabular-num fw-bold fs-6">
                             <span class="{% if txn.txn_type == 'income' %}text-income{% else %}text-expense{% endif %}">
                                 {% if txn.txn_type == 'income' %}+{% else %}-{% endif %}{{ txn.amount | currency }}
                             </span>
                         </td>
-                        <td class="text-center">
-                            <div class="d-flex justify-content-center gap-1">
-                                <button type="button" class="btn-friendly btn-friendly-sm p-1 text-primary" title="Edit Transaction"
+                        <td class="text-end">
+                            <!-- Minimum 44x44px Hit Target Action Buttons with Clear Labels -->
+                            <div class="d-inline-flex gap-2">
+                                <button type="button" class="btn-friendly btn-friendly-sm" title="Edit Transaction"
                                         onclick="openEditTxnModal('{{ txn.transaction_id }}', '{{ txn.account_id }}', '{{ txn.category_id }}', '{{ txn.amount }}', '{{ txn.txn_type }}', '{{ txn.txn_date }}', '{{ txn.description | escape }}')">
-                                    <i class="bi bi-pencil"></i>
+                                    <i class="bi bi-pencil-square"></i>
+                                    <span>Edit</span>
                                 </button>
-                                <button type="button" class="btn-friendly btn-friendly-sm p-1 text-danger" title="Delete Transaction"
+                                <button type="button" class="btn-friendly btn-friendly-danger btn-friendly-sm" title="Delete Transaction"
                                         onclick="openDeleteTxnModal('{{ txn.transaction_id }}', '{{ txn.description or txn.category_name }}', '{{ txn.amount | currency }}')">
                                     <i class="bi bi-trash"></i>
+                                    <span>Delete</span>
                                 </button>
                             </div>
                         </td>

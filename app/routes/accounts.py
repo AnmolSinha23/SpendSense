@@ -37,11 +37,33 @@ def list_accounts():
         (user_id,)
     )
 
-    total_net_worth = sum(acc['current_balance'] for acc in accounts) if accounts else Decimal('0.00')
+    liquid_accounts = []
+    liability_accounts = []
+    total_liquid_cash = Decimal('0.00')
+    total_liabilities = Decimal('0.00')
+
+    for acc in accounts:
+        bal = Decimal(str(acc['current_balance'] or '0.00'))
+        acc_type = str(acc['account_type'] or '').strip()
+        if acc_type in ('Credit Card', 'Loan') or bal < 0:
+            due = abs(bal) if bal < 0 else Decimal('0.00')
+            acc_copy = dict(acc)
+            acc_copy['outstanding_due'] = due
+            liability_accounts.append(acc_copy)
+            total_liabilities += due
+        else:
+            liquid_accounts.append(acc)
+            total_liquid_cash += bal
+
+    total_net_worth = total_liquid_cash - total_liabilities
 
     return render_template(
         'accounts.html',
         accounts=accounts,
+        liquid_accounts=liquid_accounts,
+        liability_accounts=liability_accounts,
+        total_liquid_cash=total_liquid_cash,
+        total_liabilities=total_liabilities,
         total_net_worth=total_net_worth
     )
 
