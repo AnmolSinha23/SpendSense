@@ -49,8 +49,9 @@
 
                         <div>
                             <form action="{{ url_for('categories.delete_category', category_id=cat.category_id) }}" method="POST" onsubmit="return confirm('Delete this custom category?');">
-                                <button type="submit" class="btn-friendly btn-friendly-sm p-1 text-danger border-0" title="Delete Category" {% if cat.txn_count > 0 %}disabled{% endif %}>
-                                    <i class="bi bi-trash fs-6"></i>
+                                <button type="submit" class="btn-friendly btn-friendly-danger btn-friendly-sm" title="{% if cat.txn_count > 0 %}Cannot delete: attached to transactions{% else %}Delete Category{% endif %}" {% if cat.txn_count > 0 %}disabled{% endif %}>
+                                    <i class="bi bi-trash"></i>
+                                    <span>Delete</span>
                                 </button>
                             </form>
                         </div>

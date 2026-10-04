@@ -1102,3 +1102,87 @@ footer {
     padding: 1.5rem 0;
     margin-top: auto;
 }
+
+/* --------------------------------------------------------------------------
+   11. Smooth Polish: Custom Scrollbars, Keyboard Focus Rings & Responsive Ergonomics
+   -------------------------------------------------------------------------- */
+
+/* Custom Accessible Themed Scrollbars (Eliminates jarring white Windows scrollbar in dark mode) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-body);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--border-hover);
+}
+
+/* Smooth Interactive Transitions */
+.friendly-card,
+.btn-friendly,
+.form-input-friendly,
+.metric-ribbon,
+.filter-chip {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* High-Contrast Accessible Keyboard Focus Rings (WCAG 2.1 AA) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+.form-input-friendly:focus-visible,
+.btn-friendly:focus-visible {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 2px !important;
+}
+
+/* Smooth Touch Table Scrolling */
+.table-responsive {
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-sm);
+}
+
+/* Mobile & Tablet Ergonomic Breakpoints */
+@media (max-width: 768px) {
+    .transactions-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .search-input-wrapper {
+        min-width: 100%;
+        width: 100%;
+    }
+    .toolbar-select-wrapper {
+        width: 100%;
+    }
+    .toolbar-select {
+        width: 100%;
+    }
+    .metric-ribbon {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 0.75rem 1rem;
+    }
+    .cashflow-hero-number {
+        font-size: 1.85rem;
+    }
+    .metric-big-number {
+        font-size: 1.45rem;
+    }
+    .btn-stepper {
+        min-width: 40px;
+        min-height: 40px;
+    }
+    .stepper-month-label {
+        padding: 0 0.5rem;
+        font-size: 0.92rem;
+    }
+}
+

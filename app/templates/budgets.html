@@ -11,13 +11,13 @@
     </div>
     <div class="d-flex align-items-center gap-2">
         <!-- Month / Year Selector Form -->
-        <form method="GET" action="{{ url_for('budgets.list_budgets') }}" class="d-flex gap-1">
-            <select name="month" class="form-input-friendly py-1" style="width: auto;" onchange="this.form.submit()">
+        <form method="GET" action="{{ url_for('budgets.list_budgets') }}" class="d-flex gap-1 align-items-center">
+            <select name="month" class="form-input-friendly" style="width: auto; min-height: 44px;" onchange="this.form.submit()" aria-label="Select Month">
                 {% for m_num, m_name in months_list %}
                 <option value="{{ m_num }}" {% if selected_month == m_num %}selected{% endif %}>{{ m_name }}</option>
                 {% endfor %}
             </select>
-            <select name="year" class="form-input-friendly py-1" style="width: auto;" onchange="this.form.submit()">
+            <select name="year" class="form-input-friendly" style="width: auto; min-height: 44px;" onchange="this.form.submit()" aria-label="Select Year">
                 {% for y in range(current_year - 1, current_year + 2) %}
                 <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
                 {% endfor %}
@@ -36,21 +36,21 @@
     <div class="col-sm-6 col-xl-3">
         <div class="metric-summary-card">
             <div class="metric-title-small">Total Budget Allocated</div>
-            <div class="metric-big-number font-mono tabular-num">{{ total_budgeted | currency }}</div>
+            <div class="metric-big-number tabular-num">{{ total_budgeted | currency }}</div>
             <div class="metric-helper-text">{{ budgets | length }} Categories Configured</div>
         </div>
     </div>
     <div class="col-sm-6 col-xl-3">
         <div class="metric-summary-card">
             <div class="metric-title-small">Total Spent So Far</div>
-            <div class="metric-big-number font-mono tabular-num {% if total_spent > 0 %}text-expense{% else %}text-zero{% endif %}">{{ total_spent | currency }}</div>
+            <div class="metric-big-number tabular-num {% if total_spent > 0 %}text-expense{% else %}text-zero{% endif %}">{{ total_spent | currency }}</div>
             <div class="metric-helper-text">Across budgeted categories</div>
         </div>
     </div>
     <div class="col-sm-6 col-xl-3">
         <div class="metric-summary-card">
             <div class="metric-title-small">Remaining Budget</div>
-            <div class="metric-big-number font-mono tabular-num {% if (total_budgeted - total_spent) > 0 %}text-income{% elif (total_budgeted - total_spent) < 0 %}text-expense{% else %}text-zero{% endif %}">
+            <div class="metric-big-number tabular-num {% if (total_budgeted - total_spent) > 0 %}text-income{% elif (total_budgeted - total_spent) < 0 %}text-expense{% else %}text-zero{% endif %}">
                 {{ (total_budgeted - total_spent) | currency }}
             </div>
             <div class="metric-helper-text">Available spending buffer</div>
@@ -84,7 +84,7 @@
                 <form action="{{ url_for('budgets.delete_budget', budget_id=b.budget_id) }}" method="POST" onsubmit="return confirm('Remove budget for {{ b.category_name }}?');">
                     <input type="hidden" name="month" value="{{ selected_month }}">
                     <input type="hidden" name="year" value="{{ selected_year }}">
-                    <button type="submit" class="btn-friendly btn-friendly-sm p-1 border-0 text-muted" title="Delete Budget">
+                    <button type="submit" class="btn-friendly btn-friendly-danger btn-friendly-sm px-2" style="min-width: 44px; min-height: 44px;" title="Delete Budget" aria-label="Delete Budget">
                         <i class="bi bi-trash"></i>
                     </button>
                 </form>
@@ -92,7 +92,7 @@
 
             <!-- Progress Bar & Status -->
             <div class="d-flex justify-content-between align-items-center small my-2">
-                <span class="font-mono fw-bold text-main">{{ b.percentage_used }}% Used</span>
+                <span class="tabular-num fw-bold text-main">{{ b.percentage_used }}% Used</span>
                 {% if b.budget_status == 'EXCEEDED' %}
                     <span class="badge-friendly badge-expense-friendly">Over Budget</span>
                 {% elif b.budget_status == 'WARNING' %}
@@ -106,7 +106,7 @@
                 <div class="progress-friendly-fill" style="width: {{ [b.percentage_used, 100] | min }}%; background-color: {% if b.budget_status == 'EXCEEDED' %}var(--expense-red){% else %}{% if b.budget_status == 'WARNING' %}var(--warning-amber){% else %}var(--income-green){% endif %}{% endif %};"></div>
             </div>
 
-            <div class="row g-1 text-center font-mono p-2 rounded border" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important; font-size: 0.78rem;">
+            <div class="row g-1 text-center tabular-num p-2 rounded border" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important; font-size: 0.78rem;">
                 <div class="col-4">
                     <span class="text-secondary fw-semibold d-block small">Budget</span>
                     <span class="fw-bold text-main">{{ b.budget_amount | currency }}</span>
@@ -163,7 +163,7 @@
 
                     <div class="mb-3">
                         <label class="form-label-friendly">Monthly Limit Amount (₹) *</label>
-                        <input type="number" step="0.01" min="1" class="form-input-friendly font-mono" name="budget_amount" placeholder="e.g. 5000" required autofocus>
+                        <input type="number" step="0.01" min="1" class="form-input-friendly tabular-num" name="budget_amount" placeholder="e.g. 5000" required autofocus>
                     </div>
 
                     <div class="row g-2 mb-3">

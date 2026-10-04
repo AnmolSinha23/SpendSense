@@ -189,7 +189,7 @@
                             grid: { color: styles.gridColor },
                             ticks: {
                                 color: styles.textColor,
-                                font: { family: 'JetBrains Mono', size: 11 },
+                                font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' },
                                 callback: function (val) {
                                     return '₹' + (val >= 1000 ? (val / 1000).toLocaleString('en-IN') + 'k' : val);
                                 }

@@ -10,20 +10,20 @@
         <p class="text-muted mb-0">Visual spending breakdowns and trends for <strong>{{ selected_month }}/{{ selected_year }}</strong></p>
     </div>
     <div class="d-flex align-items-center gap-2">
-        <form method="GET" action="{{ url_for('reports.index') }}" class="d-flex gap-1">
-            <select name="month" id="reportMonth" class="form-input-friendly py-1" style="width: auto;" onchange="this.form.submit()">
+        <form method="GET" action="{{ url_for('reports.index') }}" class="d-flex gap-1 align-items-center">
+            <select name="month" id="reportMonth" class="form-input-friendly" style="width: auto; min-height: 44px;" onchange="this.form.submit()" aria-label="Select Month">
                 {% for m_num, m_name in months_list %}
                 <option value="{{ m_num }}" {% if selected_month == m_num %}selected{% endif %}>{{ m_name }}</option>
                 {% endfor %}
             </select>
-            <select name="year" id="reportYear" class="form-input-friendly py-1" style="width: auto;" onchange="this.form.submit()">
+            <select name="year" id="reportYear" class="form-input-friendly" style="width: auto; min-height: 44px;" onchange="this.form.submit()" aria-label="Select Year">
                 {% for y in range(current_year - 1, current_year + 2) %}
                 <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
                 {% endfor %}
             </select>
         </form>
 
-        <a href="{{ url_for('reports.export_csv') }}" class="btn-friendly">
+        <a href="{{ url_for('reports.export_csv') }}" class="btn-friendly" title="Export CSV spreadsheet">
             <i class="bi bi-file-earmark-spreadsheet-fill text-success"></i>
             <span>Export CSV</span>
         </a>
@@ -31,7 +31,7 @@
 </div>
 
 <!-- 3 Month Summary Cards -->
-<div class="row g-3 mb-4 font-mono tabular-num">
+<div class="row g-3 mb-4 tabular-num">
     <div class="col-md-4">
         <div class="metric-summary-card">
             <div class="metric-title-small">Total Month's Income</div>
@@ -138,10 +138,10 @@
                             </div>
                         </td>
                         <td><span class="badge-friendly badge-expense-friendly">Expense</span></td>
-                        <td class="text-center font-mono text-secondary fw-semibold">{{ cat.transaction_count }}</td>
-                        <td class="text-end font-mono text-secondary fw-medium">{{ cat.avg_transaction_amount | currency }}</td>
-                        <td class="text-end font-mono fw-bold text-expense">{{ cat.total_amount | currency }}</td>
-                        <td class="text-end font-mono">
+                        <td class="text-center tabular-num text-secondary fw-semibold">{{ cat.transaction_count }}</td>
+                        <td class="text-end tabular-num text-secondary fw-medium">{{ cat.avg_transaction_amount | currency }}</td>
+                        <td class="text-end tabular-num fw-bold text-expense">{{ cat.total_amount | currency }}</td>
+                        <td class="text-end tabular-num">
                             <span class="fw-bold text-main">{{ "%.1f"|format(pct) }}%</span>
                             <div class="progress-friendly mt-1">
                                 <div class="progress-friendly-fill" style="width: {{ pct }}%; background-color: var(--expense-red);"></div>
