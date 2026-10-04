@@ -1,0 +1,3 @@
+"""
+SpendSense - Route Blueprints Initialization
+"""

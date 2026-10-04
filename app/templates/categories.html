@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Categories - SpendSense{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-7">
+        <h3 class="fw-bold mb-1">Transaction Categories</h3>
+        <p class="text-muted mb-0">Organize your expenditures and revenue streams into default and custom tags</p>
+    </div>
+    <div class="col-md-5 text-md-end mt-3 mt-md-0">
+        <button class="btn btn-primary px-3 shadow-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+            <i class="bi bi-plus-lg me-1"></i> Add Custom Category
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- User Custom Categories -->
+    <div class="col-lg-6">
+        <div class="card card-custom h-100">
+            <div class="card-header card-header-clean d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-person-gear text-primary"></i>
+                    <span class="fw-bold">Your Custom Categories</span>
+                </div>
+                <span class="badge bg-primary-subtle text-primary">{{ custom_categories | length }} tags</span>
+            </div>
+            <div class="card-body p-3">
+                {% if custom_categories %}
+                <div class="d-flex flex-column gap-2">
+                    {% for cat in custom_categories %}
+                    <div class="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-icon-box bg-white text-primary shadow-sm" style="width: 40px; height: 40px;">
+                                <i class="bi {{ cat.icon or 'bi-tag' }}"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-dark">{{ cat.category_name }}</h6>
+                                <span class="badge {% if cat.category_type == 'income' %}badge-income{% else %}badge-expense{% endif %} small">
+                                    {{ cat.category_type | capitalize }}
+                                </span>
+                                <span class="text-muted small ms-2">{{ cat.txn_count }} transaction(s)</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <form action="{{ url_for('categories.delete_category', category_id=cat.category_id) }}" method="POST" onsubmit="return confirm('Delete this custom category?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Delete Category" {% if cat.txn_count > 0 %}disabled{% endif %}>
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-tag fs-1 d-block mb-2"></i>
+                    <p class="mb-2">You haven't created any custom categories yet.</p>
+                    <button class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                        Create One Now
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Default Global Categories -->
+    <div class="col-lg-6">
+        <div class="card card-custom h-100">
+            <div class="card-header card-header-clean d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-shield-check text-success"></i>
+                    <span class="fw-bold">Default System Categories</span>
+                </div>
+                <span class="badge bg-secondary-subtle text-secondary">{{ default_categories | length }} tags</span>
+            </div>
+            <div class="card-body p-3">
+                <div class="row g-2">
+                    {% for cat in default_categories %}
+                    <div class="col-sm-6">
+                        <div class="p-2 border rounded-3 bg-white d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi {{ cat.icon or 'bi-tag' }} text-secondary"></i>
+                                <span class="fw-semibold small">{{ cat.category_name }}</span>
+                            </div>
+                            <span class="badge {% if cat.category_type == 'income' %}badge-income{% else %}badge-expense{% endif %}" style="font-size: 0.65rem;">
+                                {{ cat.category_type | upper }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-4 p-3 bg-light rounded-3 border">
+                    <h6 class="fw-bold text-dark small mb-1"><i class="bi bi-info-circle me-1 text-primary"></i> 3NF Relational Design Note</h6>
+                    <p class="small text-muted mb-0">
+                        Default categories have <code>user_id IS NULL</code> (shared across all accounts), whereas custom categories carry <code>user_id = your_id</code>, maintaining 3NF normalization without schema redundancy.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Custom Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('categories.add_category') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-tag text-primary me-2"></i> Add Custom Category
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Category Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="category_name" placeholder="e.g. Pet Care, Gaming, Side Hustle" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Type <span class="text-danger">*</span></label>
+                        <select class="form-select" name="category_type" required>
+                            <option value="expense">Expense</option>
+                            <option value="income">Income</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Icon (Bootstrap Icon Class)</label>
+                        <select class="form-select" name="icon">
+                            <option value="bi-tag">bi-tag (Default Tag)</option>
+                            <option value="bi-cart3">bi-cart3 (Cart / Grocery)</option>
+                            <option value="bi-cpu">bi-cpu (Tech / Electronics)</option>
+                            <option value="bi-activity">bi-activity (Fitness / Gym)</option>
+                            <option value="bi-book">bi-book (Books / Study)</option>
+                            <option value="bi-controller">bi-controller (Gaming)</option>
+                            <option value="bi-cup-hot">bi-cup-hot (Coffee / Dining)</option>
+                            <option value="bi-airplane">bi-airplane (Travel)</option>
+                            <option value="bi-gift">bi-gift (Gifts)</option>
+                            <option value="bi-heart-pulse">bi-heart-pulse (Medical)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

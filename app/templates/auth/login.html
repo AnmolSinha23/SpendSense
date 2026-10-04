@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - SpendSense{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 75vh;">
+    <div class="col-md-5 col-lg-4">
+        <div class="card card-custom p-4 shadow-lg border-0">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-3">
+                    <i class="bi bi-shield-lock-fill fs-2"></i>
+                </div>
+                <h4 class="fw-bold mb-1">Welcome to SpendSense</h4>
+                <p class="text-muted small">Sign in to manage your expenditures and accounts</p>
+            </div>
+
+            <form action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+                        <input type="email" class="form-control border-start-0 ps-0" name="email" id="loginEmail" placeholder="name@example.com" value="{{ email if email else '' }}" required autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-key text-muted"></i></span>
+                        <input type="password" class="form-control border-start-0 ps-0" name="password" id="loginPassword" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-primary py-2 fw-semibold rounded-3 shadow-sm">
+                        Sign In <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Demo Credentials Helper for Examiners/Viva -->
+            <div class="p-3 bg-light rounded-3 border mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-bold small text-primary"><i class="bi bi-info-circle me-1"></i> Quick Demo Login</span>
+                    <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 small" onclick="fillDemoCredentials()">Fill Demo</button>
+                </div>
+                <div class="small text-muted font-monospace">
+                    <div><strong>Email:</strong> rahul@example.com</div>
+                    <div><strong>Pass:</strong> Password@123</div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <span class="small text-muted">Don't have an account? </span>
+                <a href="{{ url_for('auth.register') }}" class="small fw-semibold text-decoration-none">Sign Up</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fillDemoCredentials() {
+    document.getElementById('loginEmail').value = 'rahul@example.com';
+    document.getElementById('loginPassword').value = 'Password@123';
+}
+</script>
+{% endblock %}

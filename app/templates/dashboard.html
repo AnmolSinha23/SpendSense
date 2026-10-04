@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SpendSense{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-7">
+        <h3 class="fw-bold mb-1">Financial Dashboard</h3>
+        <p class="text-muted mb-0">Overview for <strong>{{ current_month_name }} {{ current_year }}</strong></p>
+    </div>
+    <div class="col-md-5 text-md-end mt-3 mt-md-0">
+        <button class="btn btn-primary px-3 shadow-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#quickAddTxnModal">
+            <i class="bi bi-plus-circle me-1"></i> Add Transaction
+        </button>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary px-3 rounded-pill ms-1">
+            <i class="bi bi-graph-up me-1"></i> Reports
+        </a>
+    </div>
+</div>
+
+<!-- 4 Key Stat Cards -->
+<div class="row g-3 mb-4">
+    <!-- Net Worth Card -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card p-3 bg-white">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase">Total Net Worth</span>
+                    <h4 class="fw-bold mb-0 mt-1 text-dark">{{ total_balance | currency }}</h4>
+                    <span class="small text-muted">Across {{ accounts | length }} account(s)</span>
+                </div>
+                <div class="stat-icon-box bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Income Card -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card p-3 bg-white">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase">Monthly Income</span>
+                    <h4 class="fw-bold mb-0 mt-1 text-success">{{ monthly_income | currency }}</h4>
+                    <span class="small text-muted">{{ current_month_name }} inflows</span>
+                </div>
+                <div class="stat-icon-box bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-arrow-down-left"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Expense Card -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card p-3 bg-white">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase">Monthly Expenses</span>
+                    <h4 class="fw-bold mb-0 mt-1 text-danger">{{ monthly_expense | currency }}</h4>
+                    <span class="small text-muted">{{ current_month_name }} outflows</span>
+                </div>
+                <div class="stat-icon-box bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-arrow-up-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Net Savings Card -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card p-3 bg-white">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase">Net Savings</span>
+                    <h4 class="fw-bold mb-0 mt-1 {% if monthly_savings >= 0 %}text-primary{% else %}text-danger{% endif %}">
+                        {{ monthly_savings | currency }}
+                    </h4>
+                    <span class="small text-muted">Income minus expenses</span>
+                </div>
+                <div class="stat-icon-box {% if monthly_savings >= 0 %}bg-info bg-opacity-10 text-info{% else %}bg-warning bg-opacity-10 text-warning{% endif %}">
+                    <i class="bi bi-piggy-bank"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Budget Warnings & Alerts Section (from Database View) -->
+{% if budget_alerts %}
+<div class="card card-custom mb-4 border-start border-4 border-warning">
+    <div class="card-body p-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
+                <h6 class="fw-bold mb-0">Budget Attention Required ({{ budget_alerts | length }})</h6>
+            </div>
+            <a href="{{ url_for('budgets.list_budgets') }}" class="small text-decoration-none fw-semibold">View All Budgets &rarr;</a>
+        </div>
+        <div class="row g-2">
+            {% for alert in budget_alerts %}
+            <div class="col-md-6 col-lg-4">
+                <div class="p-2 border rounded-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold small"><i class="bi {{ alert.category_icon }} me-1"></i>{{ alert.category_name }}</span>
+                        {% if alert.budget_status == 'EXCEEDED' %}
+                            <span class="badge bg-danger">Exceeded ({{ alert.percentage_used }}%)</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Warning ({{ alert.percentage_used }}%)</span>
+                        {% endif %}
+                    </div>
+                    <div class="progress mb-1" style="height: 6px;">
+                        <div class="progress-bar {% if alert.budget_status == 'EXCEEDED' %}bg-danger{% else %}bg-warning{% endif %}"
+                             role="progressbar" style="width: {{ [alert.percentage_used, 100] | min }}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted" style="font-size: 0.75rem;">
+                        <span>Spent: {{ alert.actual_spent | currency }}</span>
+                        <span>Limit: {{ alert.budget_amount | currency }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Main Section: Recent Transactions & Accounts -->
+<div class="row g-4">
+    <!-- Left Column: Recent Transactions Table -->
+    <div class="col-lg-8">
+        <div class="card card-custom h-100">
+            <div class="card-header card-header-clean d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-primary"></i>
+                    <span class="fw-bold">Recent Transactions</span>
+                </div>
+                <a href="{{ url_for('transactions.list_transactions') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                    View All
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category / Note</th>
+                                <th>Account</th>
+                                <th>Date</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for txn in recent_transactions %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="stat-icon-box bg-light text-secondary" style="width: 36px; height: 36px; font-size: 1rem;">
+                                            <i class="bi {{ txn.category_icon or 'bi-tag' }}"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold text-dark">{{ txn.category_name }}</div>
+                                            <div class="small text-muted">{{ txn.description or 'No note' }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary border">
+                                        {{ txn.account_name }}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">
+                                    {{ txn.txn_date.strftime("%d %b %Y") if hasattr(txn.txn_date, 'strftime') else txn.txn_date }}
+                                </td>
+                                <td class="text-end">
+                                    <span class="fw-bold {% if txn.txn_type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                                        {% if txn.txn_type == 'income' %}+{% else %}-{% endif %}{{ txn.amount | currency }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-receipt-cutoff fs-1 d-block mb-2"></i>
+                    <p class="mb-2">No transactions recorded yet.</p>
+                    <button class="btn btn-sm btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#quickAddTxnModal">
+                        Add First Transaction
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Financial Accounts -->
+    <div class="col-lg-4">
+        <div class="card card-custom h-100">
+            <div class="card-header card-header-clean d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-bank text-primary"></i>
+                    <span class="fw-bold">My Accounts</span>
+                </div>
+                <a href="{{ url_for('accounts.list_accounts') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                    Manage
+                </a>
+            </div>
+            <div class="card-body p-3">
+                {% if accounts %}
+                <div class="d-flex flex-column gap-2">
+                    {% for acc in accounts %}
+                    <div class="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-icon-box bg-white text-primary shadow-sm" style="width: 40px; height: 40px;">
+                                {% if acc.account_type == 'Cash' %}
+                                    <i class="bi bi-cash-stack"></i>
+                                {% elif acc.account_type == 'Credit Card' %}
+                                    <i class="bi bi-credit-card-2-front"></i>
+                                {% elif acc.account_type == 'UPI' %}
+                                    <i class="bi bi-qr-code-scan"></i>
+                                {% else %}
+                                    <i class="bi bi-bank2"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-dark">{{ acc.account_name }}</h6>
+                                <span class="badge bg-secondary-subtle text-secondary small">{{ acc.account_type }}</span>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-bold fs-6 {% if acc.balance >= 0 %}text-dark{% else %}text-danger{% endif %}">
+                                {{ acc.balance | currency }}
+                            </span>
+                            <div class="text-muted" style="font-size: 0.72rem;">Live balance</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <p class="mb-2">No accounts created.</p>
+                    <a href="{{ url_for('accounts.list_accounts') }}" class="btn btn-sm btn-primary rounded-pill">Create Account</a>
+                </div>
+                {% endif %}
+
+                <!-- Quick Viva Fact Box -->
+                <div class="mt-4 p-3 bg-primary bg-opacity-10 rounded-3 border border-primary-subtle">
+                    <div class="d-flex align-items-center gap-2 text-primary fw-bold small mb-1">
+                        <i class="bi bi-info-circle-fill"></i> DBMS Live Sync
+                    </div>
+                    <p class="small text-muted mb-0">
+                        Account balances are updated instantly on transaction changes using MySQL <strong>AFTER INSERT / UPDATE / DELETE</strong> triggers.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
