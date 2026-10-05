@@ -23,7 +23,8 @@ CREATE TABLE users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(120) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NULL,
+    google_sub VARCHAR(255) UNIQUE DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_user_email_not_empty CHECK (CHAR_LENGTH(TRIM(email)) > 0),
     CONSTRAINT chk_user_name_not_empty CHECK (CHAR_LENGTH(TRIM(name)) > 0)
