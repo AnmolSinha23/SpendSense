@@ -60,4 +60,13 @@ def create_app():
     app.register_blueprint(budgets_bp)
     app.register_blueprint(reports_bp)
 
+    from authlib.integrations.flask_client import OAuth
+    oauth = OAuth(app)
+    oauth.register(
+        name='google',
+        server_metadata_url=app.config.get('GOOGLE_DISCOVERY_URL', 'https://accounts.google.com/.well-known/openid-configuration'),
+        client_kwargs={'scope': 'openid email profile'}
+    )
+    app.oauth = oauth
+
     return app
