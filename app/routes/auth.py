@@ -167,6 +167,11 @@ def logout():
 
 @auth_bp.route('/auth/google/login')
 def google_login():
+    client_id = current_app.config.get('GOOGLE_CLIENT_ID')
+    client_secret = current_app.config.get('GOOGLE_CLIENT_SECRET')
+    if not client_id or not client_secret:
+        flash("Google Sign-In is not configured on this server instance (missing GOOGLE_CLIENT_ID in .env). Please log in with email/password or use the Demo button below.", "warning")
+        return redirect(url_for('auth.login'))
     next_url = request.args.get('next')
     if next_url:
         session['next_url'] = next_url
