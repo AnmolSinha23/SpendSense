@@ -121,12 +121,16 @@ def login():
             flash("Please enter both email and password.", "danger")
             return render_template('auth/login.html', email=email)
 
-        # Retrieve user record by email
-        user = query_db(
-            "SELECT user_id, name, email, password_hash FROM users WHERE email = %s",
-            (email,),
-            one=True
-        )
+        try:
+            # Retrieve user record by email
+            user = query_db(
+                "SELECT user_id, name, email, password_hash FROM users WHERE email = %s",
+                (email,),
+                one=True
+            )
+        except Exception as e:
+            flash(f"Database Error: {str(e)}. Please verify your database tables and credentials.", "danger")
+            return render_template('auth/login.html', email=email)
 
         if user and user['password_hash'] and check_password_hash(user['password_hash'], password):
             pending_sub = session.get('pending_google_sub')
