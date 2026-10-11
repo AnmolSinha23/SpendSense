@@ -402,7 +402,7 @@ GROUP BY
 -- SECTION 5: SEED DATA
 -- ----------------------------------------------------------------------------
 INSERT INTO users (user_id, name, email, password_hash, created_at) VALUES
-(1, 'Rahul Sharma', 'rahul@example.com', 'scrypt:32768:8:1$lYUQeHrOYZMDGVo2$50dd391a132f80708aabcbf5e7caceccb5c31cbedbab09c5856aef7b949acf66fbe52bf7dc901648b0a7b66c3076778d065dda575c5a2b0fc81892c95ea831dc', '2026-06-01 10:00:00'),
+(1, 'Anmol', 'anmol@example.com', 'scrypt:32768:8:1$lYUQeHrOYZMDGVo2$50dd391a132f80708aabcbf5e7caceccb5c31cbedbab09c5856aef7b949acf66fbe52bf7dc901648b0a7b66c3076778d065dda575c5a2b0fc81892c95ea831dc', '2026-06-01 10:00:00'),
 (2, 'Priya Patel', 'priya@example.com', 'scrypt:32768:8:1$lYUQeHrOYZMDGVo2$50dd391a132f80708aabcbf5e7caceccb5c31cbedbab09c5856aef7b949acf66fbe52bf7dc901648b0a7b66c3076778d065dda575c5a2b0fc81892c95ea831dc', '2026-07-01 11:30:00');
 
 INSERT INTO accounts (account_id, user_id, account_name, account_type, balance, created_at) VALUES
