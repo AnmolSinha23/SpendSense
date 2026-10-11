@@ -235,38 +235,51 @@ def add_transaction():
         return redirect(request.referrer or url_for('transactions.list_transactions'))
 
     try:
-        # Call MySQL Stored Procedure sp_add_transaction
-        # Signature: (p_user_id, p_account_id, p_category_id, p_amount, p_txn_type, p_txn_date, p_description, OUT p_txn_id, OUT p_status_code, OUT p_status_msg)
         db = get_db()
         cursor = db.cursor()
 
-        args = [
-            int(user_id),
-            int(account_id),
-            int(category_id),
-            float(amount),
-            txn_type,
-            txn_date_str,
-            description,
-            0,   # OUT: p_txn_id
-            0,   # OUT: p_status_code
-            ''   # OUT: p_status_msg
-        ]
+        try:
+            # Call MySQL Stored Procedure sp_add_transaction
+            args = [
+                int(user_id),
+                int(account_id),
+                int(category_id),
+                float(amount),
+                txn_type,
+                txn_date_str,
+                description,
+                0,   # OUT: p_txn_id
+                0,   # OUT: p_status_code
+                ''   # OUT: p_status_msg
+            ]
 
-        result = cursor.callproc('sp_add_transaction', args)
-        db.commit()
-        cursor.close()
+            result = cursor.callproc('sp_add_transaction', args)
+            db.commit()
+            status_code = result[8]
+            status_msg = result[9]
+            cursor.close()
 
-        status_code = result[8]
-        status_msg = result[9]
-
-        if status_code == 0:
-            flash(f"Transaction recorded successfully! (Account balance automatically updated via trigger)", "success")
-        else:
-            flash(f"Failed to record transaction: {status_msg}", "danger")
+            if status_code == 0:
+                flash(f"Transaction recorded successfully! (Account balance automatically updated via trigger)", "success")
+            else:
+                flash(f"Failed to record transaction: {status_msg}", "danger")
+        except Exception:
+            # Fallback for cloud database engines (like TiDB) where stored procedures are not supported
+            cursor.execute(
+                "INSERT INTO transactions (user_id, account_id, category_id, amount, txn_type, txn_date, description) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (user_id, account_id, category_id, amount, txn_type, txn_date_str, description)
+            )
+            if txn_type == 'income':
+                cursor.execute("UPDATE accounts SET balance = balance + %s WHERE account_id = %s", (amount, account_id))
+            else:
+                cursor.execute("UPDATE accounts SET balance = balance - %s WHERE account_id = %s", (amount, account_id))
+            db.commit()
+            cursor.close()
+            flash("Transaction recorded successfully!", "success")
 
     except Exception as e:
-        flash(f"Database error executing stored procedure: {str(e)}", "danger")
+        flash(f"Database error recording transaction: {str(e)}", "danger")
 
     return redirect(request.referrer or url_for('transactions.list_transactions'))
 
