@@ -3,82 +3,422 @@
 {% block title %}Sign In — SpendSense{% endblock %}
 
 {% block auth_content %}
-<div class="row justify-content-center align-items-center py-4" style="min-height: 75vh;">
-    <div class="col-md-6 col-lg-4">
-        <div class="friendly-card p-4 shadow-sm">
-            <!-- Header -->
-            <div class="text-center mb-4">
-                <div class="brand-icon mx-auto mb-2" style="width: 48px; height: 48px; font-size: 1.5rem;">
-                    <i class="bi bi-wallet2"></i>
-                </div>
-                <h4 class="fw-bold mb-1" style="color: var(--text-main);">Welcome to SpendSense</h4>
-                <p class="text-muted small mb-0">Sign in to track your budget, accounts, and expenses</p>
-            </div>
-
-            <!-- Login Form -->
-            <form action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST">
-                <div class="mb-3">
-                    <label class="form-label-friendly" for="loginEmail">Email Address</label>
-                    <input type="email" class="form-input-friendly" name="email" id="loginEmail" placeholder="e.g. anmol@example.com" value="{{ email if email else '' }}" required autofocus>
-                </div>
-
+<div class="auth-split-container">
+    <div class="auth-split-card shadow-lg">
+        <div class="row g-0">
+            <!-- Left Column: Action / Login Form -->
+            <div class="col-lg-6 auth-form-pane d-flex flex-column justify-content-center">
+                <!-- Branding Header -->
                 <div class="mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <label class="form-label-friendly mb-0" for="loginPassword">Password</label>
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="brand-icon" style="width: 44px; height: 44px; font-size: 1.35rem;">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                        <div>
+                            <span class="fs-5 fw-bold text-main d-block lh-1">SpendSense</span>
+                            <span class="text-muted small" style="font-size: 0.76rem;">Personal Finance System</span>
+                        </div>
                     </div>
-                    <input type="password" class="form-input-friendly" name="password" id="loginPassword" placeholder="Enter your password" required>
+                    <h2 class="fw-bold mb-1" style="color: var(--text-main); letter-spacing: -0.02em;">Welcome Back</h2>
+                    <p class="text-secondary small mb-0">Sign in to track your budget, manage accounts, and view expenses</p>
                 </div>
 
-                <div class="d-grid mb-3">
-                    <button type="submit" class="btn-friendly btn-friendly-primary py-2 justify-content-center fs-6">
-                        <span>Sign In</span>
-                        <i class="bi bi-box-arrow-in-right ms-1"></i>
-                    </button>
-                </div>
-                <div class="position-relative mb-3 text-center">
-                    <hr>
-                    <span class="position-absolute top-50 start-50 translate-middle px-2 small text-muted" style="background-color: var(--bg-card);">OR</span>
-                </div>
+                <!-- Login Form (Upfront required fields) -->
+                <form id="loginForm" action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST" novalidate>
+                    <!-- Email Address Field -->
+                    <div class="mb-4">
+                        <label class="form-label-friendly" for="loginEmail">Email Address</label>
+                        <input type="email" 
+                               class="form-input-friendly" 
+                               name="email" 
+                               id="loginEmail" 
+                               placeholder="e.g. anmol@example.com" 
+                               value="{{ email if email else '' }}" 
+                               autocomplete="username" 
+                               required 
+                               autofocus>
+                        <!-- Plain text error explanation -->
+                        <div id="emailError" class="field-error-text" style="display: none;">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            <span id="emailErrorMsg">Please include a valid email address with '@' (e.g. anmol@example.com)</span>
+                        </div>
+                    </div>
 
-                <div class="d-grid mb-4">
-                    <a href="{{ url_for('auth.google_login', next=request.args.get('next')) }}" class="btn-friendly py-2 justify-content-center fs-6" style="background-color: #fff; color: #3c4043; border: 1px solid #dadce0; border-radius: 8px;">
-                        <i class="bi bi-google me-2" style="color: #4285F4;"></i>
-                        <span>Continue with Google</span>
-                    </a>
-                </div>
-            </form>
+                    <!-- Password Field (Displayed upfront directly below email) -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label-friendly mb-0" for="loginPassword">Password</label>
+                            <button type="button" 
+                                    class="btn btn-link p-0 text-decoration-none small text-secondary" 
+                                    id="togglePasswordBtn" 
+                                    style="font-size: 0.82rem;" 
+                                    onclick="togglePasswordVisibility()" 
+                                    tabindex="-1">
+                                <i class="bi bi-eye me-1" id="togglePasswordIcon"></i>
+                                <span id="togglePasswordText">Show</span>
+                            </button>
+                        </div>
+                        <input type="password" 
+                               class="form-input-friendly" 
+                               name="password" 
+                               id="loginPassword" 
+                               placeholder="Enter your password" 
+                               autocomplete="current-password" 
+                               required>
+                        <!-- Plain text error explanation -->
+                        <div id="passwordError" class="field-error-text" style="display: none;">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            <span id="passwordErrorMsg">Please enter your password</span>
+                        </div>
+                    </div>
 
-            <!-- Quick Demo Credentials Box for Examiners & Reviewers -->
-            <div class="p-3 rounded border mb-3" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important;">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="small fw-bold text-primary">
-                        <i class="bi bi-person-check-fill me-1"></i> Evaluator Demo Login (Anmol)
-                    </span>
-                    <button type="button" class="btn-friendly py-0 px-2 small" style="font-size: 0.75rem;" onclick="fillDemoCredentials()">
-                        <i class="bi bi-magic me-1"></i> Auto-Fill
-                    </button>
-                </div>
-                <div class="small text-secondary font-mono" style="font-size: 0.85rem; line-height: 1.6;">
-                    <div>Email: <strong class="text-main">anmol@example.com</strong></div>
-                    <div>Password: <strong class="text-main">Password@123</strong></div>
+                    <!-- Primary Submit Button -->
+                    <div class="d-grid mb-3">
+                        <button type="submit" id="submitLoginBtn" class="btn-friendly btn-friendly-primary py-2.5 justify-content-center fs-6 fw-bold">
+                            <span>Sign In</span>
+                            <i class="bi bi-box-arrow-in-right ms-2"></i>
+                        </button>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="position-relative my-3 text-center">
+                        <hr style="border-color: var(--border-color);">
+                        <span class="position-absolute top-50 start-50 translate-middle px-3 small text-muted" style="background-color: var(--bg-card); font-weight: 500;">OR</span>
+                    </div>
+
+                    <!-- Standardized Social Logins: Google Button with tactile border & hover shadow -->
+                    <div class="d-grid mb-4">
+                        <a href="{{ url_for('auth.google_login', next=request.args.get('next')) }}" class="auth-google-btn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                            </svg>
+                            <span>Continue with Google</span>
+                        </a>
+                    </div>
+                </form>
+
+                <!-- Navigation link to register -->
+                <div class="text-center small mt-2">
+                    <span class="text-secondary">Don't have an account? </span>
+                    <a href="{{ url_for('auth.register') }}" class="fw-bold text-decoration-none" style="color: var(--primary);">Create an account</a>
                 </div>
             </div>
 
-            <!-- Register Link -->
-            <div class="text-center small">
-                <span class="text-secondary">Don't have an account? </span>
-                <a href="{{ url_for('auth.register') }}" class="fw-bold text-decoration-none" style="color: var(--primary);">Create an account</a>
+            <!-- Right Column: Reassurance & Value (Stylized SpendSense Preview) -->
+            <div class="col-lg-6 auth-preview-pane d-none d-lg-flex flex-column justify-content-between">
+                <!-- Top Value Header -->
+                <div>
+                    <div class="d-inline-flex align-items-center gap-1 px-3 py-1 rounded-pill small fw-semibold text-white mb-3" style="background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.2);">
+                        <i class="bi bi-stars text-warning"></i>
+                        <span>Smart Personal Finance</span>
+                    </div>
+                    <h3 class="fw-bold text-white mb-2" style="font-size: 1.7rem; line-height: 1.25;">
+                        Know exactly where your money goes.
+                    </h3>
+                    <p class="text-white text-opacity-75 small mb-0">
+                        Total visibility over cashflow, category budgets, and automated bank statement imports.
+                    </p>
+                </div>
+
+                <!-- Stylized Preview of SpendSense Dashboard -->
+                <div class="auth-dashboard-preview">
+                    <!-- Preview Top Bar -->
+                    <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom" style="border-color: rgba(255, 255, 255, 0.12) !important;">
+                        <div class="d-flex gap-1.5 align-items-center">
+                            <span class="rounded-circle d-inline-block" style="width: 8px; height: 8px; background: rgba(255, 255, 255, 0.3);"></span>
+                            <span class="rounded-circle d-inline-block" style="width: 8px; height: 8px; background: rgba(255, 255, 255, 0.3);"></span>
+                            <span class="rounded-circle d-inline-block" style="width: 8px; height: 8px; background: rgba(255, 255, 255, 0.3);"></span>
+                        </div>
+                        <span class="font-mono text-white text-opacity-50" style="font-size: 0.72rem;">spendsense.app/dashboard</span>
+                        <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25" style="font-size: 0.7rem; color: #86efac !important;">Live October</span>
+                    </div>
+
+                    <!-- Hero Net Cashflow Preview -->
+                    <div class="mb-3">
+                        <div class="text-white text-opacity-60 text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Monthly Net Cashflow</div>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="font-mono text-white fw-bold" style="font-size: 1.85rem; letter-spacing: -0.02em;">+₹52,550.00</span>
+                            <span class="small fw-semibold" style="color: #86efac; font-size: 0.8rem;">
+                                <i class="bi bi-arrow-up-right"></i> +14.8% savings
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Mini Income & Expense Row -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="p-2 rounded" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08);">
+                                <div class="text-white text-opacity-60" style="font-size: 0.7rem;">Income</div>
+                                <div class="font-mono text-white fw-bold" style="font-size: 0.95rem;">₹85,000.00</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 rounded" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08);">
+                                <div class="text-white text-opacity-60" style="font-size: 0.7rem;">Expenses</div>
+                                <div class="font-mono text-white fw-bold" style="font-size: 0.95rem;">₹32,450.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Category Budget Progress -->
+                    <div class="p-2.5 rounded mb-2" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08);">
+                        <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.78rem;">
+                            <span class="text-white fw-semibold">Dining & Groceries</span>
+                            <span class="text-white text-opacity-75 font-mono">₹6,800 / ₹10,000</span>
+                        </div>
+                        <div class="progress" style="height: 6px; background-color: rgba(255, 255, 255, 0.15);">
+                            <div class="progress-bar" role="progressbar" style="width: 68%; background-color: #4ade80;" aria-valuenow="68" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Parsed Transaction Sample -->
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background: rgba(255, 255, 255, 0.04); font-size: 0.78rem;">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; background: rgba(59, 130, 246, 0.2); color: #93c5fd;">
+                                <i class="bi bi-cup-hot" style="font-size: 0.72rem;"></i>
+                            </div>
+                            <div>
+                                <span class="text-white fw-semibold d-block lh-1">Swiggy</span>
+                                <span class="text-white text-opacity-50" style="font-size: 0.68rem;">Auto-cleaned UPI • Dining</span>
+                            </div>
+                        </div>
+                        <span class="font-mono text-white fw-bold">-₹420.00</span>
+                    </div>
+                </div>
+
+                <!-- Reassurance Features -->
+                <div class="d-flex flex-column gap-2">
+                    <div class="auth-feature-pill">
+                        <i class="bi bi-file-earmark-spreadsheet text-info fs-6"></i>
+                        <span><strong>1-Click CSV Import:</strong> BOI, SBI & HDFC bank statements with auto UPI cleanup</span>
+                    </div>
+                    <div class="auth-feature-pill">
+                        <i class="bi bi-database-check text-success fs-6"></i>
+                        <span><strong>3NF ACID Ledger:</strong> Real-time balance calculations with strict relational guarantees</span>
+                    </div>
+                    <div class="auth-feature-pill">
+                        <i class="bi bi-shield-lock text-warning fs-6"></i>
+                        <span><strong>Privacy-First & Ad-Free:</strong> Your financial data is private and never tracked</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Floating Toast Notification for Evaluator Demo Login (Extract out of main form) -->
+<div id="evaluatorDemoToast" class="evaluator-floating-toast">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold" style="font-size: 0.78rem;">
+            <i class="bi bi-shield-check me-1"></i> Evaluator Demo Access
+        </span>
+        <button type="button" class="btn-close" style="font-size: 0.7rem;" onclick="dismissDemoToast()" aria-label="Close demo toast"></button>
+    </div>
+    
+    <p class="text-secondary small mb-2" style="font-size: 0.82rem; line-height: 1.4;">
+        Testing or evaluating SpendSense? Use the pre-seeded evaluator demo account:
+    </p>
+
+    <div class="p-2 rounded mb-3 font-mono" style="background-color: var(--bg-subtle); border: 1px solid var(--border-color); font-size: 0.8rem; line-height: 1.6;">
+        <div class="d-flex justify-content-between">
+            <span class="text-muted">User:</span>
+            <strong class="text-main">Anmol</strong>
+        </div>
+        <div class="d-flex justify-content-between">
+            <span class="text-muted">Email:</span>
+            <strong class="text-main">anmol@example.com</strong>
+        </div>
+        <div class="d-flex justify-content-between">
+            <span class="text-muted">Password:</span>
+            <strong class="text-main">Password@123</strong>
+        </div>
+    </div>
+
+    <!-- 1-Click Magic: Fills and automatically submits the form -->
+    <button type="button" 
+            id="demoLoginBtn" 
+            class="btn-friendly btn-friendly-primary w-100 py-2 justify-content-center fw-bold small" 
+            onclick="loginAsGuestDemo()">
+        <i class="bi bi-lightning-charge-fill me-1"></i>
+        <span>Login as Guest Demo</span>
+    </button>
+</div>
+
+<!-- Minimized Floating Pill Button (Restores toast if dismissed) -->
+<button type="button" 
+        id="evaluatorDemoPill" 
+        class="evaluator-pill-btn" 
+        onclick="reopenDemoToast()" 
+        style="display: none;" 
+        title="Open Evaluator Demo Credentials">
+    <i class="bi bi-shield-check text-primary"></i>
+    <span>Guest Demo Access</span>
+</button>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function fillDemoCredentials() {
-    document.getElementById('loginEmail').value = 'anmol@example.com';
-    document.getElementById('loginPassword').value = 'Password@123';
+// Toggle Password Visibility
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('loginPassword');
+    const toggleIcon = document.getElementById('togglePasswordIcon');
+    const toggleText = document.getElementById('togglePasswordText');
+
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.className = 'bi bi-eye-slash me-1';
+        toggleText.textContent = 'Hide';
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.className = 'bi bi-eye me-1';
+        toggleText.textContent = 'Show';
+    }
 }
+
+// 1-Click Magic Evaluator Demo Login
+function loginAsGuestDemo() {
+    const emailField = document.getElementById('loginEmail');
+    const passField = document.getElementById('loginPassword');
+    const form = document.getElementById('loginForm');
+    const demoBtn = document.getElementById('demoLoginBtn');
+
+    if (emailField && passField && form) {
+        clearEmailError();
+        clearPasswordError();
+
+        emailField.value = 'anmol@example.com';
+        passField.value = 'Password@123';
+
+        if (demoBtn) {
+            demoBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Logging in as Anmol...';
+            demoBtn.disabled = true;
+        }
+
+        form.submit();
+    }
+}
+
+// Dismiss and Reopen Floating Toast
+function dismissDemoToast() {
+    const toast = document.getElementById('evaluatorDemoToast');
+    const pill = document.getElementById('evaluatorDemoPill');
+    if (toast) toast.style.display = 'none';
+    if (pill) pill.style.display = 'inline-flex';
+}
+
+function reopenDemoToast() {
+    const toast = document.getElementById('evaluatorDemoToast');
+    const pill = document.getElementById('evaluatorDemoPill');
+    if (toast) toast.style.display = 'block';
+    if (pill) pill.style.display = 'none';
+}
+
+// Ergonomic Cross-Generational Client-Side Validation
+const emailInput = document.getElementById('loginEmail');
+const passwordInput = document.getElementById('loginPassword');
+const emailError = document.getElementById('emailError');
+const emailErrorMsg = document.getElementById('emailErrorMsg');
+const passwordError = document.getElementById('passwordError');
+const loginForm = document.getElementById('loginForm');
+
+function validateEmail(val) {
+    if (!val || val.trim() === '') {
+        return "Please enter your email address";
+    }
+    if (!val.includes('@')) {
+        return "Please include an '@' symbol in your email address (e.g. anmol@example.com)";
+    }
+    const parts = val.split('@');
+    if (parts.length > 2 || !parts[1] || !parts[1].includes('.')) {
+        return "Please enter a valid domain after '@' (e.g. name@example.com)";
+    }
+    const domainParts = parts[1].split('.');
+    if (domainParts[domainParts.length - 1].length < 2) {
+        return "Please include a valid domain extension (e.g. .com, .edu)";
+    }
+    return "";
+}
+
+function showEmailError(msg) {
+    emailInput.classList.add('is-invalid-friendly');
+    emailErrorMsg.textContent = msg;
+    emailError.style.display = 'flex';
+}
+
+function clearEmailError() {
+    emailInput.classList.remove('is-invalid-friendly');
+    emailError.style.display = 'none';
+}
+
+function showPasswordError(msg) {
+    passwordInput.classList.add('is-invalid-friendly');
+    passwordError.style.display = 'flex';
+}
+
+function clearPasswordError() {
+    passwordInput.classList.remove('is-invalid-friendly');
+    passwordError.style.display = 'none';
+}
+
+// Real-time listener: clear error as user fixes the mistake
+emailInput.addEventListener('input', function() {
+    if (emailInput.classList.contains('is-invalid-friendly')) {
+        const err = validateEmail(emailInput.value);
+        if (!err) {
+            clearEmailError();
+        } else {
+            emailErrorMsg.textContent = err;
+        }
+    }
+});
+
+emailInput.addEventListener('blur', function() {
+    const val = emailInput.value.trim();
+    if (val) {
+        const err = validateEmail(val);
+        if (err) {
+            showEmailError(err);
+        } else {
+            clearEmailError();
+        }
+    }
+});
+
+passwordInput.addEventListener('input', function() {
+    if (passwordInput.value.trim().length > 0) {
+        clearPasswordError();
+    }
+});
+
+// Intercept form submission to give plain-text ergonomic explanations if invalid
+loginForm.addEventListener('submit', function(e) {
+    let hasError = false;
+    const emailErr = validateEmail(emailInput.value);
+    if (emailErr) {
+        showEmailError(emailErr);
+        hasError = true;
+    } else {
+        clearEmailError();
+    }
+
+    if (!passwordInput.value.trim()) {
+        showPasswordError("Please enter your password");
+        hasError = true;
+    } else {
+        clearPasswordError();
+    }
+
+    if (hasError) {
+        e.preventDefault();
+        if (emailErr) {
+            emailInput.focus();
+        } else {
+            passwordInput.focus();
+        }
+    }
+});
 </script>
 {% endblock %}
