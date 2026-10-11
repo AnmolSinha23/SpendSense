@@ -3,11 +3,17 @@
 {% block title %}Transactions — SpendSense{% endblock %}
 
 {% block content %}
-<!-- Page Header (Streamlined, No Lonely Export Button) -->
+<!-- Page Header with Bulk Import Action -->
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
     <div>
         <h3 class="fw-bold mb-1" style="color: var(--text-main);">Transaction Ledger</h3>
         <p class="text-secondary mb-0 small">Audit, filter, and manage your complete financial history with live instant search</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn-friendly" data-bs-toggle="modal" data-bs-target="#importCsvModal" title="Import transactions from CSV spreadsheet">
+            <i class="bi bi-file-earmark-arrow-up-fill text-primary"></i>
+            <span>Import CSV</span>
+        </button>
     </div>
 </div>
 
@@ -194,6 +200,12 @@
             <span id="bulkSelectionCounter" class="badge-friendly badge-account-friendly d-none">
                 <span id="selectedCount" class="fw-bold tabular-num">0</span> selected
             </span>
+
+            <!-- Import CSV Action -->
+            <button type="button" class="btn-friendly btn-friendly-sm" data-bs-toggle="modal" data-bs-target="#importCsvModal" title="Import transactions from CSV spreadsheet">
+                <i class="bi bi-file-earmark-arrow-up-fill text-primary"></i>
+                <span>Import CSV</span>
+            </button>
 
             <!-- Relocated Export CSV Action directly on table header bar -->
             <a href="{{ url_for('reports.export_csv', **request.args) }}" id="exportCsvBtn" class="btn-friendly btn-friendly-sm" title="Export current ledger to CSV spreadsheet">
@@ -452,6 +464,70 @@
                 <div class="modal-friendly-footer">
                     <button type="button" class="btn-friendly" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn-friendly btn-friendly-danger">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Bulk Import Transactions from CSV -->
+<div class="modal fade" id="importCsvModal" tabindex="-1" aria-labelledby="importCsvModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-friendly-content">
+            <form action="{{ url_for('transactions.import_csv') }}" method="POST" enctype="multipart/form-data" id="importCsvForm">
+                <div class="modal-friendly-header">
+                    <h5 class="friendly-card-title fs-6" id="importCsvModalLabel">
+                        <i class="bi bi-file-earmark-arrow-up-fill text-primary"></i> Bulk Import Transactions
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="p-3">
+                    <p class="text-secondary small mb-3">
+                        Upload a spreadsheet (.csv) to quickly import multiple transactions without manual typing.
+                    </p>
+
+                    <!-- File Upload Input -->
+                    <div class="mb-3">
+                        <label class="form-label-friendly" for="csvFileInput">Select CSV File</label>
+                        <input type="file" 
+                               class="form-control form-input-friendly" 
+                               id="csvFileInput" 
+                               name="csv_file" 
+                               accept=".csv,text/csv" 
+                               required>
+                    </div>
+
+                    <!-- Column Requirements & Help Box -->
+                    <div class="p-3 rounded border mb-3" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important;">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="small fw-bold text-main">
+                                <i class="bi bi-info-circle-fill text-primary me-1"></i> Expected Columns
+                            </span>
+                            <a href="{{ url_for('transactions.download_sample_csv') }}" class="btn-friendly py-0 px-2 small" style="font-size: 0.75rem;" title="Download sample CSV template">
+                                <i class="bi bi-download me-1 text-success"></i> Sample Template
+                            </a>
+                        </div>
+                        <ul class="small text-secondary mb-0 ps-3" style="font-size: 0.85rem; line-height: 1.6;">
+                            <li><strong>Date:</strong> <code>YYYY-MM-DD</code> or <code>DD-MM-YYYY</code></li>
+                            <li><strong>Type:</strong> <code>expense</code> or <code>income</code></li>
+                            <li><strong>Amount:</strong> e.g. <code>1250.00</code> or <code>₹1,250</code></li>
+                            <li><strong>Category:</strong> e.g. <code>Groceries</code>, <code>Salary</code></li>
+                            <li><strong>Account:</strong> e.g. <code>Main Bank Account</code>, <code>Cash</code></li>
+                            <li><strong>Description:</strong> Note, store, or merchant details</li>
+                        </ul>
+                    </div>
+
+                    <div class="small text-muted">
+                        <i class="bi bi-shield-check text-success me-1"></i>
+                        New accounts and categories in your CSV will be created automatically.
+                    </div>
+                </div>
+                <div class="modal-friendly-footer">
+                    <button type="button" class="btn-friendly" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-friendly btn-friendly-primary" id="importSubmitBtn">
+                        <i class="bi bi-cloud-arrow-up-fill me-1"></i>
+                        <span>Start Import</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -788,6 +864,18 @@ function openDeleteTxnModal(id, description, amountFormatted) {
     document.getElementById('delDesc').textContent = description;
     document.getElementById('delAmount').textContent = amountFormatted;
     new bootstrap.Modal(document.getElementById('deleteTxnModal')).show();
+}
+
+// CSV Import Form Loading State
+const importForm = document.getElementById('importCsvForm');
+if (importForm) {
+    importForm.addEventListener('submit', function() {
+        const btn = document.getElementById('importSubmitBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Importing...';
+        }
+    });
 }
 </script>
 {% endblock %}
