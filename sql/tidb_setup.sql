@@ -13,6 +13,7 @@ USE spendsense_db;
 -- ----------------------------------------------------------------------------
 -- 1. DROP EXISTING TABLES AND VIEWS SAFELY
 -- ----------------------------------------------------------------------------
+DROP VIEW IF EXISTS view_monthly_category_summary;
 DROP VIEW IF EXISTS view_monthly_budget_status;
 DROP VIEW IF EXISTS view_account_financial_summary;
 DROP TABLE IF EXISTS budgets;
@@ -106,7 +107,7 @@ SELECT
     b.user_id,
     b.category_id,
     c.category_name,
-    c.icon,
+    c.icon AS category_icon,
     b.month,
     b.year,
     b.budget_amount,
@@ -140,6 +141,32 @@ LEFT JOIN (
        AND b.category_id = spent.category_id
        AND b.year = spent.txn_year
        AND b.month = spent.txn_month;
+
+CREATE VIEW view_monthly_category_summary AS
+SELECT
+    t.user_id,
+    YEAR(t.txn_date) AS year,
+    MONTH(t.txn_date) AS month,
+    t.category_id,
+    c.category_name,
+    c.category_type,
+    c.icon AS category_icon,
+    SUM(t.amount) AS total_amount,
+    COUNT(t.transaction_id) AS transaction_count,
+    ROUND(AVG(t.amount), 2) AS avg_transaction_amount,
+    MIN(t.amount) AS min_transaction_amount,
+    MAX(t.amount) AS max_transaction_amount
+FROM transactions t
+INNER JOIN categories c ON t.category_id = c.category_id
+INNER JOIN users u ON t.user_id = u.user_id
+GROUP BY
+    t.user_id,
+    YEAR(t.txn_date),
+    MONTH(t.txn_date),
+    t.category_id,
+    c.category_name,
+    c.category_type,
+    c.icon;
 
 CREATE VIEW view_account_financial_summary AS
 SELECT
