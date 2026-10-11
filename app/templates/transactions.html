@@ -483,12 +483,12 @@
                 </div>
                 <div class="p-3">
                     <p class="text-secondary small mb-3">
-                        Upload a spreadsheet (.csv) to quickly import multiple transactions without manual typing.
+                        Upload your transactions in bulk! Supports both our <strong>Sample CSV Template</strong> and raw <strong>Bank Statement CSVs</strong> (Bank of India, SBI, HDFC, ICICI, etc.) with automated UPI cleaning and smart category detection.
                     </p>
 
                     <!-- File Upload Input -->
                     <div class="mb-3">
-                        <label class="form-label-friendly" for="csvFileInput">Select CSV File</label>
+                        <label class="form-label-friendly" for="csvFileInput">Select CSV File or Bank Statement</label>
                         <input type="file" 
                                class="form-control form-input-friendly" 
                                id="csvFileInput" 
@@ -501,25 +501,23 @@
                     <div class="p-3 rounded border mb-3" style="background-color: var(--bg-subtle); border-color: var(--border-color) !important;">
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <span class="small fw-bold text-main">
-                                <i class="bi bi-info-circle-fill text-primary me-1"></i> Expected Columns
+                                <i class="bi bi-info-circle-fill text-primary me-1"></i> Formats Supported
                             </span>
                             <a href="{{ url_for('transactions.download_sample_csv') }}" class="btn-friendly py-0 px-2 small" style="font-size: 0.75rem;" title="Download sample CSV template">
                                 <i class="bi bi-download me-1 text-success"></i> Sample Template
                             </a>
                         </div>
                         <ul class="small text-secondary mb-0 ps-3" style="font-size: 0.85rem; line-height: 1.6;">
-                            <li><strong>Date:</strong> <code>YYYY-MM-DD</code> or <code>DD-MM-YYYY</code></li>
-                            <li><strong>Type:</strong> <code>expense</code> or <code>income</code></li>
-                            <li><strong>Amount:</strong> e.g. <code>1250.00</code> or <code>₹1,250</code></li>
-                            <li><strong>Category:</strong> e.g. <code>Groceries</code>, <code>Salary</code></li>
-                            <li><strong>Account:</strong> e.g. <code>Main Bank Account</code>, <code>Cash</code></li>
-                            <li><strong>Description:</strong> Note, store, or merchant details</li>
+                            <li><strong>Bank Statements:</strong> Directly upload files with <code>Debit</code>, <code>Credit</code>, and <code>Remarks</code>.</li>
+                            <li><strong>UPI Auto-Cleaning:</strong> Raw strings like <code>UPI/.../Swiggy/...</code> are automatically cleaned to merchant names!</li>
+                            <li><strong>Smart Categorization:</strong> Automatically tags food, groceries, travel, shopping, and utilities.</li>
+                            <li><strong>Standard Template:</strong> Columns: <code>Date, Type, Category, Account, Amount, Description</code>.</li>
                         </ul>
                     </div>
 
                     <div class="small text-muted">
                         <i class="bi bi-shield-check text-success me-1"></i>
-                        New accounts and categories in your CSV will be created automatically.
+                        Preamble headers, bank metadata, and disclaimer notes are skipped automatically.
                     </div>
                 </div>
                 <div class="modal-friendly-footer">

@@ -7,6 +7,7 @@ Live account balances are automatically updated via MySQL database triggers.
 
 import io
 import csv
+import re
 import calendar
 from datetime import datetime, date, timedelta
 from decimal import Decimal
@@ -372,13 +373,79 @@ def download_sample_csv():
     return output
 
 
+def clean_bank_remark(remark):
+    """
+    Intelligently extracts merchant or receiver names from complex bank UPI & NEFT narrations.
+    e.g. 'UPI/245983127701/CR/NITIN /BKID/955584317/Paymen' -> 'NITIN (UPI)'
+    """
+    if not remark:
+        return "Transaction"
+    remark = str(remark).strip()
+    if remark.startswith("UPI/"):
+        parts = remark.split("/")
+        if len(parts) >= 4:
+            name = parts[3].strip()
+            note = parts[6].strip() if len(parts) > 6 else (parts[-1].strip() if len(parts) > 4 else "")
+            if note and note not in ("NO REM", "Paid v", "Paymen", "Sent u", "UPI", "UPIInt"):
+                return f"{name} ({note})"
+            return f"{name} (UPI)"
+    if "SBInt" in remark:
+        return "Bank Savings Interest"
+    if "SMSChrgs" in remark:
+        return "Bank SMS Charges"
+    if remark.startswith("CWDR"):
+        return "ATM Cash Withdrawal"
+    if remark.startswith("NEFT"):
+        parts = remark.split("/")
+        if len(parts) >= 4:
+            return f"NEFT: {parts[3].strip()}"
+        return remark
+    return remark
+
+
+def infer_category(remark, txn_type):
+    """
+    Auto-categorizes transactions into standard 3NF categories based on merchant and narration keywords.
+    """
+    low = (remark or '').lower()
+    if txn_type == 'income':
+        if any(k in low for k in ['salary', 'salry', 'payroll', 'stipend']):
+            return 'Salary'
+        if any(k in low for k in ['sbint', 'interest', 'dividend', 'mutual', 'profit', 'stock', 'invest']):
+            return 'Investments & Dividends'
+        if any(k in low for k in ['cashback', 'bhimca', 'reward', 'gift', 'grant']):
+            return 'Gifts & Grants'
+        return 'Other Income'
+    else:
+        if any(k in low for k in ['swiggy', 'zomato', 'subway', 'kfc', 'mcdonald', 'domino', 'pizza', 'burger', 'cafe', 'bistro', 'restaurant', 'barbeque', 'food', 'hotel', 'dining', 'culinary', 'dinner', 'lunch']):
+            return 'Dining Out & Food Delivery'
+        if any(k in low for k in ['blinkit', 'blinki', 'grofer', 'dmart', 'nature basket', 'zepto', 'bigbasket', 'grocery', 'fruits', 'milk', 'dairy', 'provisions', 'supermarket']):
+            return 'Groceries & Provisions'
+        if any(k in low for k in ['amazon', 'flipkart', 'flipka', 'myntra', 'meesho', 'ajio', 'shopping', 'apparel', 'cloth', 'zara', 'h&m']):
+            return 'Shopping & Apparel'
+        if any(k in low for k in ['rapido', 'uber', 'ola', 'redbus', 'irctc', 'train', 'flight', 'petrol', 'diesel', 'fuel', 'hpcl', 'iocl', 'bpcl', 'fastag', 'cab', 'auto', 'metro', 'fare']):
+            return 'Transportation & Fuel'
+        if any(k in low for k in ['bill', 'electricity', 'broadband', 'airtel', 'jio', 'vi', 'vodafone', 'tata power', 'piped gas', 'water', 'recharge', 'postpaid', 'smschrg', 'airp']):
+            return 'Utilities & Bills'
+        if any(k in low for k in ['netflix', 'spotify', 'prime', 'hotstar', 'cinema', 'movie', 'imax', 'bookmyshow', 'theatre', 'game', 'playstore']):
+            return 'Entertainment & Subscriptions'
+        if any(k in low for k in ['pharmacy', 'apollo', 'medplus', 'hospital', 'doctor', 'clinic', 'medicine', 'health', 'lab']):
+            return 'Healthcare & Pharmacy'
+        if any(k in low for k in ['rent', 'house rent', 'flat', 'owner', 'maintenance', 'housing', 'hostel']):
+            return 'Rent & Housing'
+        if any(k in low for k in ['iiit', 'college', 'school', 'tuition', 'fee', 'exam', 'book', 'university', 'institute', 'course']):
+            return 'Education & Books'
+        if any(k in low for k in ['paytmqr', 'bharatpe', 'paytm']):
+            return 'Shopping & Apparel'
+        return None
+
+
 @transactions_bp.route('/transactions/import-csv', methods=['POST'])
 @login_required
 def import_csv():
     """
-    Parses an uploaded CSV file and imports transactions in bulk.
-    Features robust column detection, multi-format date handling,
-    and automatic account/category mapping.
+    Parses both standard SpendSense templates and Indian bank statement CSV exports
+    (Bank of India, SBI, HDFC, ICICI, etc.) with preambles, Debit/Credit columns, and UPI narrations.
     """
     user_id = session['user_id']
     file = request.files.get('csv_file')
@@ -401,46 +468,89 @@ def import_csv():
             flash("The uploaded CSV file is empty or contains no data rows.", "warning")
             return redirect(url_for('transactions.list_transactions'))
 
-        # Clean and normalize header columns
-        header = [col.strip().lower().replace('_', ' ').replace('-', ' ') for col in rows[0]]
+        # 1. Preamble scanning (Detect Account Number / Bank Name from header metadata)
+        detected_account_name = None
+        for r in rows[:20]:
+            line_str = " ".join(r)
+            acc_match = re.search(r"Account Number\s*:\s*([A-Za-z0-9]+)", line_str, re.IGNORECASE)
+            if acc_match:
+                acc_num = acc_match.group(1).strip()
+                last4 = acc_num[-4:] if len(acc_num) >= 4 else acc_num
+                if "BKID" in line_str or any("BKID" in c for c in r):
+                    detected_account_name = f"Bank of India (..{last4})"
+                else:
+                    detected_account_name = f"Bank Account (..{last4})"
+                break
+
+        # 2. Dynamic Table Header Finder (Skips bank preamble / metadata rows)
+        header_row_idx = -1
+        for idx, r in enumerate(rows):
+            lower_cols = [c.strip().lower().replace('_', ' ').replace('-', ' ') for c in r]
+            has_date = any('date' in c for c in lower_cols)
+            has_amount_or_money = any(
+                k in c for c in lower_cols for k in ['amount', 'debit', 'credit', 'withdrawal', 'deposit', 'dr', 'cr', 'val', 'balance']
+            )
+            if has_date and has_amount_or_money:
+                header_row_idx = idx
+                break
+
+        if header_row_idx == -1:
+            header_row_idx = 0
+
+        header = [col.strip().lower().replace('_', ' ').replace('-', ' ') for col in rows[header_row_idx]]
 
         def find_col_idx(aliases):
             for alias in aliases:
                 for idx, h in enumerate(header):
-                    if alias in h:
+                    if alias == h or alias in h:
                         return idx
             return -1
 
-        date_idx = find_col_idx(['date', 'txn date', 'time', 'timestamp'])
-        type_idx = find_col_idx(['type', 'txn type', 'income/expense', 'transaction type'])
+        date_idx = find_col_idx(['date', 'txn date', 'txn. date', 'value date', 'time', 'timestamp'])
+        desc_idx = find_col_idx(['remarks', 'description', 'particulars', 'narration', 'desc', 'note', 'memo', 'title', 'detail'])
+        debit_idx = find_col_idx(['debit', 'withdrawal', 'dr', 'dr amt', 'debit amount'])
+        credit_idx = find_col_idx(['credit', 'deposit', 'cr', 'cr amt', 'credit amount'])
+        amount_idx = find_col_idx(['amount', 'total', 'amt', 'value', 'price', 'transaction amount'])
+        type_idx = find_col_idx(['type', 'txn type', 'income/expense', 'transaction type', 'cr/dr'])
         cat_idx = find_col_idx(['category', 'cat', 'tag'])
         acc_idx = find_col_idx(['account', 'acc', 'wallet', 'bank', 'payment method'])
-        amt_idx = find_col_idx(['amount', 'total', 'amt', 'value', 'price', 'cost'])
-        desc_idx = find_col_idx(['description', 'desc', 'note', 'memo', 'title', 'detail', 'remarks'])
 
-        if amt_idx == -1:
-            flash("Could not find an 'Amount' column in the uploaded CSV. Please check the header row.", "danger")
+        if amount_idx == -1 and debit_idx == -1 and credit_idx == -1:
+            flash("Could not find Amount or Debit/Credit columns in the CSV. Please check the file.", "danger")
             return redirect(url_for('transactions.list_transactions'))
 
         db = get_db()
         cursor = db.cursor(dictionary=True)
 
-        # Pre-fetch user accounts
+        # Pre-fetch existing user accounts
         cursor.execute("SELECT account_id, account_name FROM accounts WHERE user_id = %s", (user_id,))
         accounts = cursor.fetchall()
-        if not accounts:
+        acc_map = {a['account_name'].strip().lower(): a['account_id'] for a in accounts}
+
+        # If a specific bank account was detected from preamble (e.g. Bank of India ..12725)
+        if detected_account_name:
+            if detected_account_name.lower() not in acc_map:
+                cursor.execute(
+                    "INSERT INTO accounts (user_id, account_name, account_type, balance) VALUES (%s, %s, 'Bank', 0.00)",
+                    (user_id, detected_account_name)
+                )
+                db.commit()
+                default_acc_id = cursor.lastrowid
+                acc_map[detected_account_name.lower()] = default_acc_id
+            else:
+                default_acc_id = acc_map[detected_account_name.lower()]
+        elif accounts:
+            default_acc_id = accounts[0]['account_id']
+        else:
             cursor.execute(
                 "INSERT INTO accounts (user_id, account_name, account_type, balance) VALUES (%s, 'Main Bank Account', 'Bank', 0.00)",
                 (user_id,)
             )
             db.commit()
             default_acc_id = cursor.lastrowid
-            acc_map = {'main bank account': default_acc_id}
-        else:
-            default_acc_id = accounts[0]['account_id']
-            acc_map = {a['account_name'].strip().lower(): a['account_id'] for a in accounts}
+            acc_map['main bank account'] = default_acc_id
 
-        # Pre-fetch categories (user custom + global)
+        # Pre-fetch categories
         cursor.execute(
             "SELECT category_id, category_name, category_type FROM categories WHERE user_id IS NULL OR user_id = %s",
             (user_id,)
@@ -454,7 +564,7 @@ def import_csv():
             if not date_str:
                 return date.today().strftime('%Y-%m-%d')
             clean = date_str.strip().split('T')[0].split(' ')[0]
-            formats = ['%Y-%m-%d', '%d-%m-%Y', '%d/%m/%Y', '%m/%d/%Y', '%Y/%m/%d', '%d.%m.%Y', '%Y.%m.%d', '%b %d, %Y', '%d %b %Y']
+            formats = ['%d-%m-%Y', '%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y/%m/%d', '%d.%m.%Y', '%Y.%m.%d', '%b %d, %Y', '%d %b %Y']
             for fmt in formats:
                 try:
                     return datetime.strptime(clean, fmt).strftime('%Y-%m-%d')
@@ -462,44 +572,78 @@ def import_csv():
                     pass
             return date.today().strftime('%Y-%m-%d')
 
-        def clean_amount(val_str):
+        def clean_num(val_str):
             cleaned = str(val_str).replace('₹', '').replace('$', '').replace('€', '').replace(',', '').strip()
             return Decimal(cleaned)
 
         success_count = 0
         skipped_count = 0
+        net_balance_deltas = {}
 
-        for row in rows[1:]:
+        for row in rows[header_row_idx + 1:]:
             if not any(row):
                 continue
 
+            # Skip footer notes (e.g. "Note : Any discrepancy...")
+            if date_idx == -1 or date_idx >= len(row) or not row[date_idx].strip():
+                continue
+
+            date_raw = row[date_idx].strip()
+            if not re.search(r"\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}", date_raw):
+                continue
+
             try:
-                # Parse amount
-                amt_raw = row[amt_idx] if amt_idx < len(row) else ''
-                amt = clean_amount(amt_raw)
+                amount = None
+                txn_type = None
 
-                # Parse transaction type
-                raw_type = row[type_idx].strip().lower() if type_idx != -1 and type_idx < len(row) else ''
-                if 'inc' in raw_type or 'credit' in raw_type or 'deposit' in raw_type:
-                    txn_type = 'income'
-                elif 'exp' in raw_type or 'debit' in raw_type or 'withdr' in raw_type:
-                    txn_type = 'expense'
-                else:
-                    txn_type = 'expense'
+                # 1. Check separate Debit / Credit columns first (standard Bank Statements)
+                if debit_idx != -1 or credit_idx != -1:
+                    d_val = row[debit_idx].strip() if debit_idx != -1 and debit_idx < len(row) else ''
+                    c_val = row[credit_idx].strip() if credit_idx != -1 and credit_idx < len(row) else ''
 
-                amt = abs(amt)
-                if amt <= 0:
+                    if d_val:
+                        try:
+                            amt = clean_num(d_val)
+                            if amt > 0:
+                                amount = amt
+                                txn_type = 'expense'
+                        except Exception:
+                            pass
+
+                    if c_val and amount is None:
+                        try:
+                            amt = clean_num(c_val)
+                            if amt > 0:
+                                amount = amt
+                                txn_type = 'income'
+                        except Exception:
+                            pass
+
+                # 2. Check single Amount column
+                if amount is None and amount_idx != -1 and amount_idx < len(row):
+                    a_val = row[amount_idx].strip()
+                    try:
+                        amt = clean_num(a_val)
+                        amount = abs(amt)
+                        if type_idx != -1 and type_idx < len(row):
+                            t_str = row[type_idx].lower()
+                            txn_type = 'income' if any(k in t_str for k in ['inc', 'cr', 'credit', 'deposit']) else 'expense'
+                        else:
+                            txn_type = 'expense' if amt < 0 else 'expense'
+                    except Exception:
+                        pass
+
+                if amount is None or amount <= 0:
                     skipped_count += 1
                     continue
 
-                # Parse date
-                date_raw = row[date_idx] if date_idx != -1 and date_idx < len(row) else ''
                 txn_date = parse_date(date_raw)
 
-                # Parse description
-                desc = row[desc_idx].strip() if desc_idx != -1 and desc_idx < len(row) else ''
+                # Raw remark and clean description
+                raw_desc = row[desc_idx].strip() if desc_idx != -1 and desc_idx < len(row) else ''
+                clean_desc = clean_bank_remark(raw_desc) if raw_desc else 'Transaction'
 
-                # Resolve account
+                # Account resolution
                 acc_name_raw = row[acc_idx].strip() if acc_idx != -1 and acc_idx < len(row) else ''
                 target_acc_id = acc_map.get(acc_name_raw.lower())
                 if not target_acc_id:
@@ -513,9 +657,12 @@ def import_csv():
                     else:
                         target_acc_id = default_acc_id
 
-                # Resolve category
+                # Category resolution (Smart inference from remark if category column is absent or empty)
                 cat_name_raw = row[cat_idx].strip() if cat_idx != -1 and cat_idx < len(row) else ''
-                target_cat_id = cat_map.get(cat_name_raw.lower())
+                if not cat_name_raw and raw_desc:
+                    cat_name_raw = infer_category(raw_desc, txn_type) or ''
+
+                target_cat_id = cat_map.get(cat_name_raw.lower()) if cat_name_raw else None
                 if not target_cat_id:
                     if cat_name_raw:
                         cursor.execute(
@@ -527,18 +674,16 @@ def import_csv():
                     else:
                         target_cat_id = default_income_cat_id if txn_type == 'income' else default_expense_cat_id
 
-                # Insert transaction
+                # Insert transaction record
                 cursor.execute(
                     "INSERT INTO transactions (user_id, account_id, category_id, amount, txn_type, txn_date, description) "
                     "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                    (user_id, target_acc_id, target_cat_id, float(amt), txn_type, txn_date, desc)
+                    (user_id, target_acc_id, target_cat_id, float(amount), txn_type, txn_date, clean_desc)
                 )
 
-                # Resynchronize account balance directly
-                if txn_type == 'income':
-                    cursor.execute("UPDATE accounts SET balance = balance + %s WHERE account_id = %s", (float(amt), target_acc_id))
-                else:
-                    cursor.execute("UPDATE accounts SET balance = balance - %s WHERE account_id = %s", (float(amt), target_acc_id))
+                # Record net delta for account balance
+                delta = amount if txn_type == 'income' else -amount
+                net_balance_deltas[target_acc_id] = net_balance_deltas.get(target_acc_id, Decimal('0.00')) + delta
 
                 success_count += 1
 
@@ -546,18 +691,27 @@ def import_csv():
                 skipped_count += 1
                 continue
 
+        # Batch update account balances efficiently
+        for acc_id, net_delta in net_balance_deltas.items():
+            cursor.execute(
+                "UPDATE accounts SET balance = balance + %s WHERE account_id = %s",
+                (float(net_delta), acc_id)
+            )
+
         db.commit()
         cursor.close()
 
         if success_count > 0:
-            msg = f"Successfully imported {success_count} transactions from CSV!"
+            msg = f"Successfully imported {success_count} transactions from statement!"
+            if detected_account_name:
+                msg += f" (Linked to {detected_account_name})"
             if skipped_count > 0:
-                msg += f" ({skipped_count} invalid rows skipped)"
+                msg += f" [{skipped_count} header/footer rows skipped]"
             flash(msg, "success")
         else:
-            flash("No valid transactions could be imported. Please verify your CSV values.", "warning")
+            flash("No valid transactions found in the uploaded file.", "warning")
 
     except Exception as e:
-        flash(f"Error parsing CSV file: {str(e)}", "danger")
+        flash(f"Error parsing CSV statement: {str(e)}", "danger")
 
     return redirect(url_for('transactions.list_transactions'))
